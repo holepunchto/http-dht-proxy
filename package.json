@@ -1,0 +1,19 @@
+{
+  "name": "http-dht-proxy",
+  "version": "1.0.0",
+  "description": "Relay http request to dht peer",
+  "author": "Holepunch",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/holepunch/http-dht-proxy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/holepunchto/http-dht-proxy/issues"
+  },
+  "homepage": "https://github.com/holepunchto/http-dht-proxy",
+  "dependencies": {
+    "hyperdht": "^6.20.5",
+    "net": "^1.0.2"
+  }
+}
