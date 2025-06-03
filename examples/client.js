@@ -1,9 +1,14 @@
-const proxyUrl = 'http://localhost:8080'
-const dhtPublicKey = '2f622c5607d5744f8ba8b307d1b7aa4666b9ae045e815495d36ba9750f2bde73'
+const http = require('http')
+const { HttpProxyAgent } = require('http-proxy-agent')
 
-fetch(proxyUrl, {
-  method: 'POST',
-  headers: { 'x-forwarded-for': dhtPublicKey },
-  body: JSON.stringify({ message: 'Hello from client!' })
-}).then(res => res.text())
-  .then(res => console.log('Response:', res))
+const requestUrl = 'http://hello-server.example.com'
+const proxyUrl = 'http://localhost:8080'
+
+const req = http.request(requestUrl, {
+  agent: new HttpProxyAgent(proxyUrl),
+  method: 'POST'
+}, (res) => {
+  res.pipe(process.stdout)
+})
+req.write(JSON.stringify({ message: 'Hello from client!' }))
+req.end()
