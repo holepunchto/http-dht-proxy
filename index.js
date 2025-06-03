@@ -1,6 +1,6 @@
 const net = require('net')
 const DHT = require('hyperdht')
-const proxy = require('./http-forward-host')
+const proxy = require('http-forward-host')
 
 const PORT = process.argv[2] || 8080
 
