@@ -10,7 +10,8 @@ net.createServer((sock) => {
   proxy(sock, (host) => {
     try {
       const id = host.split('.')[0]
-      const keyPair = DHT.keyPair(Buffer.alloc(32).fill(id))
+      const seed = Buffer.alloc(32).fill(id)
+      const keyPair = DHT.keyPair(seed)
       return dht.connect(idEnc.decode(keyPair.publicKey))
     } catch (err) {
       console.error('Proxy error:', err)
