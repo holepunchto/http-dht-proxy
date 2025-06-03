@@ -33,4 +33,4 @@ const server = dht.createServer((conn) => {
 const serverKeyPair = DHT.keyPair(Buffer.alloc(32).fill(NAME))
 server.listen(serverKeyPair)
 console.log('DHT public key', idEnc.normalize(serverKeyPair.publicKey))
-// Output: f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o
+
