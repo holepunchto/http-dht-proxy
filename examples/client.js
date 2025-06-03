@@ -1,4 +1,4 @@
-const requestUrl = 'http://f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o.example.com'
+const requestUrl = 'f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o.example.com'
 const proxyUrl = 'http://localhost:8080'
 
 fetch(proxyUrl, {
