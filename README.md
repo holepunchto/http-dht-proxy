@@ -15,6 +15,25 @@ DHT public key 8pinxxgqs41n4aididenw5apqp1urfmzdztr8jt4abrkdn435ewo
 
 Send a request: `node examples/client.js`
 ```
+Response: Hello from server!
+
+Request headers: {
+  "host": "localhost:8080",
+  "connection": "keep-alive",
+  "x-forwarded-for": "f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o",
+  "content-type": "text/plain;charset=UTF-8",
+  "accept": "*/*",
+  "accept-language": "*",
+  "sec-fetch-mode": "cors",
+  "user-agent": "node",
+  "accept-encoding": "gzip, deflate",
+  "content-length": "32"
+}
+Request body: {"message":"Hello from client!"}
+```
+
+Or send a request with proxy: `node examples/client-with-proxy.js`
+```
 Hello from server!
 
 Request headers: {
