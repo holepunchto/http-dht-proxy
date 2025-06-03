@@ -4,10 +4,6 @@ const { createHttpHandler } = require('../http-dht-adapter')
 // Start public DHT server
 const dht = new DHT()
 const server = dht.createServer((conn) => {
-  conn.on('error', err => {
-    if (err.code === 'ECONNRESET') return
-    console.warn('DHT error:', err)
-  })
   createHttpHandler(conn, (req, res) => {
     res.writeHead(200, { 'content-type': 'text/plain' })
     res.end('Hello from DHT backend!\n' + JSON.stringify(req.headers, null, 2))
