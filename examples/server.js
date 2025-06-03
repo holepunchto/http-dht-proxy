@@ -8,7 +8,15 @@ const NAME = 'hello-server'
 
 // start local http server
 http.createServer((req, res) => {
-  res.end('Hello from backend!\n' + JSON.stringify(req.headers, null, 2))
+  let body = ''
+  req.on('data', chunk => { body += chunk })
+  req.on('end', () => {
+    res.end(
+      'Hello from server!' +
+      '\n\nRequest headers: ' + JSON.stringify(req.headers, null, 2) +
+      '\nRequest body: ' + body
+    )
+  })
 }).listen(PORT, () => console.log(`Local http server on ${PORT}`))
 
 // start public DHT server
