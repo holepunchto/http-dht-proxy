@@ -6,6 +6,11 @@
   "bin": {
     "http-dht-proxy": "bin.js"
   },
+  "files": [
+    "index.js",
+    "bin.js",
+    "proxy.js"
+  ],
   "dependencies": {
     "bare-net": "^2.1.1",
     "bare-process": "^4.2.1",
