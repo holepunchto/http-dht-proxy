@@ -13,11 +13,8 @@ http.createServer((req, res) => {
   req.on('data', (chunk) => { body += chunk })
   req.on('end', () => {
     console.log("New request", req.headers, body)
-    res.end(
-      'Hello from server!' +
-      '\n\nRequest headers: ' + JSON.stringify(req.headers, null, 2) +
-      '\nRequest body: ' + body
-    )
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('ok');
   })
 }).listen(PORT, () => console.log(`Local http server on ${PORT}`))
 
