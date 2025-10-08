@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-const process = require('process')
 const net = require('net')
 const DHT = require('hyperdht')
 const idEnc = require('hypercore-id-encoding')
