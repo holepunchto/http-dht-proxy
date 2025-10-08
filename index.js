@@ -1,7 +1,8 @@
 const net = require('net')
 const DHT = require('hyperdht')
-const proxy = require('http-forward-host')
 const idEnc = require('hypercore-id-encoding')
+
+const proxy = require('./proxy')
 
 const PORT = process.argv[2] || 8080
 
