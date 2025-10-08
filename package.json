@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Relay http request to dht peer",
   "main": "index.js",
+  "bin": {
+    "http-dht-proxy": "bin.js"
+  },
   "dependencies": {
     "bare-net": "^2.1.1",
     "hypercore-id-encoding": "^1.3.0",

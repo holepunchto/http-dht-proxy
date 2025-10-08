@@ -1,15 +1,86 @@
-const net = require('net')
-const DHT = require('hyperdht')
-const idEnc = require('hypercore-id-encoding')
+const DEFAULT_MAX_BUFFER = 128 * 1024
 
-const proxy = require('./proxy')
+const DHT_PUBLIC_KEY = /^dht-public-key: /i
+const DHT_PUBLIC_KEY_LEN = "dht-public-key: ".length
 
-const PORT = process.argv[2] || 8080
+module.exports = function proxy (stream, proxyTo) {
+  const maxBuffer = DEFAULT_MAX_BUFFER
 
-const dht = new DHT()
-net.createServer((sock) => {
-  proxy(sock, (host) => {
-    const id = host.split('.')[0]
-    return dht.connect(idEnc.decode(id))
-  })
-}).listen(PORT, () => console.log(`HTTP-to-DHT proxy on ${PORT}`))
+  let buffer = null
+  let proxying = false
+  let destroyed = false
+
+  stream.on('data', ondata)
+  stream.on('error', noop)
+  stream.on('close', onclose)
+
+  function onclose () {
+    destroyed = true
+  }
+
+  async function ondata (data) {
+    if (buffer === null) buffer = data
+    else buffer = Buffer.concat([buffer, data])
+
+    if (proxying) return
+
+    for (let i = buffer.byteLength - 1; i >= 3; i--) {
+      if (!isEndOfHeader(buffer, i)) continue
+
+      const ascii = buffer.toString('ascii', 0, i - 3)
+
+      let dhtPublicKey = null
+
+      for (const line of ascii.split('\r\n')) {
+        if (DHT_PUBLIC_KEY.test(line)) dhtPublicKey = line.slice(DHT_PUBLIC_KEY_LEN)
+      }
+
+      stream.pause()
+      proxying = true
+
+      try {
+        const dest = await proxyTo(dhtPublicKey)
+
+        if (destroyed) {
+          stream.destroy()
+          return
+        }
+
+        stream.off('data', ondata)
+        stream.off('error', onclose)
+        stream.off('close', onclose)
+        dest.write(buffer)
+        pipeStream(stream, dest)
+      } catch (err) {
+        stream.destroy(err)
+      }
+
+      stream.resume()
+      return
+    }
+
+    if (buffer.byteLength >= maxBuffer) {
+      stream.destroy()
+    }
+  }
+}
+
+function pipeStream (a, b) {
+  a.on('error', teardown)
+  a.on('close', teardown)
+  b.on('error', teardown)
+  b.on('close', teardown)
+
+  a.pipe(b).pipe(a)
+
+  function teardown () {
+    a.destroy()
+    b.destroy()
+  }
+}
+
+function isEndOfHeader (data, i) {
+  return data[i] === 10 && data[i - 1] === 13 && data[i - 2] === 10 && data[i - 3] === 13
+}
+
+function noop () {}
