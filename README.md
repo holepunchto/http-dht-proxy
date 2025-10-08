@@ -10,7 +10,7 @@ HTTP-to-DHT proxy on 8080
 Start sample server: `node examples/server.js`
 ```
 Local http server on 8081
-DHT public key 8pinxxgqs41n4aididenw5apqp1urfmzdztr8jt4abrkdn435ewo
+DHT public key f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o
 ```
 
 Send a request: `node examples/client.js`
