@@ -1,3 +1,5 @@
+![CI](https://github.com/holepunchto/http-dht-proxy/actions/workflows/ci.yml/badge.svg)
+
 # Http DHT Proxy
 
 Relay http request to dht peer
