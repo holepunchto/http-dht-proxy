@@ -1,9 +1,9 @@
 const DEFAULT_MAX_BUFFER = 128 * 1024
 
 const DHT_PUBLIC_KEY = /^dht-public-key: /i
-const DHT_PUBLIC_KEY_LEN = "dht-public-key: ".length
+const DHT_PUBLIC_KEY_LEN = 'dht-public-key: '.length
 
-module.exports = function proxy (stream, proxyTo) {
+module.exports = function proxy(stream, proxyTo) {
   const maxBuffer = DEFAULT_MAX_BUFFER
 
   let buffer = null
@@ -14,11 +14,11 @@ module.exports = function proxy (stream, proxyTo) {
   stream.on('error', noop)
   stream.on('close', onclose)
 
-  function onclose () {
+  function onclose() {
     destroyed = true
   }
 
-  async function ondata (data) {
+  async function ondata(data) {
     if (buffer === null) buffer = data
     else buffer = Buffer.concat([buffer, data])
 
@@ -65,7 +65,7 @@ module.exports = function proxy (stream, proxyTo) {
   }
 }
 
-function pipeStream (a, b) {
+function pipeStream(a, b) {
   a.on('error', teardown)
   a.on('close', teardown)
   b.on('error', teardown)
@@ -73,14 +73,14 @@ function pipeStream (a, b) {
 
   a.pipe(b).pipe(a)
 
-  function teardown () {
+  function teardown() {
     a.destroy()
     b.destroy()
   }
 }
 
-function isEndOfHeader (data, i) {
+function isEndOfHeader(data, i) {
   return data[i] === 10 && data[i - 1] === 13 && data[i - 2] === 10 && data[i - 3] === 13
 }
 
-function noop () {}
+function noop() {}

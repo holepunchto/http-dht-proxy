@@ -5,5 +5,6 @@ fetch(proxyUrl, {
   headers: { 'dht-public-key': DHT_PUBLIC_KEY },
   method: 'POST',
   body: JSON.stringify({ message: 'Hello from client!' })
-}).then(res => res.text())
-  .then(res => console.log('Response:', res))
+})
+  .then((res) => res.text())
+  .then((res) => console.log('Response:', res))

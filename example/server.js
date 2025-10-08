@@ -8,21 +8,25 @@ const HOST = process.argv[3] || '127.0.0.1'
 const SEED = process.argv[4]
 
 // start local http server
-http.createServer((req, res) => {
-  let body = ''
-  req.on('data', (chunk) => { body += chunk })
-  req.on('end', () => {
-    console.log("New request", req.headers, body)
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('ok');
+http
+  .createServer((req, res) => {
+    let body = ''
+    req.on('data', (chunk) => {
+      body += chunk
+    })
+    req.on('end', () => {
+      console.log('New request', req.headers, body)
+      res.writeHead(200, { 'Content-Type': 'text/plain' })
+      res.end('ok')
+    })
   })
-}).listen(PORT, () => console.log(`Local http server on ${PORT}`))
+  .listen(PORT, () => console.log(`Local http server on ${PORT}`))
 
 // start public DHT server
 const dht = new DHT()
 const server = dht.createServer((conn) => {
   const local = net.connect(PORT, HOST)
-  conn.on('error', err => {
+  conn.on('error', (err) => {
     if (err.code === 'ECONNRESET' || err.message === 'Writable stream closed prematurely') return
     console.warn('DHT error:', err)
   })
