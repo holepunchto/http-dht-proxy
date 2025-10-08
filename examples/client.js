@@ -1,5 +1,5 @@
 const dhtPublicKey = 'f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o'
-const proxyUrl = 'http://45.251.115.132:8080'
+const proxyUrl = 'http://localhost:8080'
 
 fetch(proxyUrl, {
   headers: { 'dht-public-key': dhtPublicKey },
