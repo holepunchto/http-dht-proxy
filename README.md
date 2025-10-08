@@ -13,7 +13,7 @@ Local http server on 8081
 DHT public key f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o
 ```
 
-Send a request: `node examples/client.js`
+Send a request: `node examples/client.js <dht-public-key>`
 ```
 Response: Hello from server!
 

@@ -4,8 +4,8 @@ const DHT = require('hyperdht')
 const idEnc = require('hypercore-id-encoding')
 
 const PORT = process.argv[2] || 8081
-const HOST = '127.0.0.1'
-const NAME = 'hello-server'
+const HOST = process.argv[3] || '127.0.0.1'
+const SEED = process.argv[4]
 
 // start local http server
 http.createServer((req, res) => {
@@ -31,7 +31,7 @@ const server = dht.createServer((conn) => {
   })
   conn.pipe(local).pipe(conn)
 })
-const seed = Buffer.alloc(32).fill(NAME)
-const keyPair = DHT.keyPair(seed)
+
+const keyPair = DHT.keyPair(SEED)
 server.listen(keyPair)
 console.log('DHT public key', idEnc.normalize(keyPair.publicKey))
