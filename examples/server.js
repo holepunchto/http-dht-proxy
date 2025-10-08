@@ -32,6 +32,6 @@ const server = dht.createServer((conn) => {
   conn.pipe(local).pipe(conn)
 })
 
-const keyPair = DHT.keyPair(SEED)
+const keyPair = DHT.keyPair(SEED && Buffer.alloc(32).fill(SEED))
 server.listen(keyPair)
 console.log('DHT public key', idEnc.normalize(keyPair.publicKey))
