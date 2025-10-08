@@ -8,8 +8,7 @@
   },
   "files": [
     "index.js",
-    "bin.js",
-    "proxy.js"
+    "bin.js"
   ],
   "dependencies": {
     "bare-net": "^2.1.1",
