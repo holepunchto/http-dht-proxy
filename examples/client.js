@@ -1,8 +1,8 @@
-const host = 'f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o.example.com'
+const dhtPublicKey = 'f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o'
 const proxyUrl = 'http://localhost:8080'
 
 fetch(proxyUrl, {
-  headers: { 'x-forwarded-for': host },
+  headers: { 'x-forwarded-for': dhtPublicKey },
   method: 'POST',
   body: JSON.stringify({ message: 'Hello from client!' })
 }).then(res => res.text())

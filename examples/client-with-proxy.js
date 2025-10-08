@@ -1,10 +1,10 @@
 const http = require('http')
 const { HttpProxyAgent } = require('http-proxy-agent')
 
-const requestUrl = 'http://f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o.example.com'
+const dhtPublicKey = 'f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o'
 const proxyUrl = 'http://localhost:8080'
 
-const req = http.request(requestUrl, {
+const req = http.request(`http://${dhtPublicKey}`, {
   agent: new HttpProxyAgent(proxyUrl),
   method: 'POST'
 }, (res) => {
