@@ -12,6 +12,7 @@ http.createServer((req, res) => {
   let body = ''
   req.on('data', (chunk) => { body += chunk })
   req.on('end', () => {
+    console.log("New request", req.headers, body)
     res.end(
       'Hello from server!' +
       '\n\nRequest headers: ' + JSON.stringify(req.headers, null, 2) +
