@@ -31,16 +31,3 @@ Request headers: {
 }
 Request body: {"message":"Hello from client!"}
 ```
-
-Or send a request with proxy: `node examples/client-with-proxy.js`
-```
-Hello from server!
-
-Request headers: {
-  "host": "f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o",
-  "proxy-connection": "close",
-  "connection": "close",
-  "transfer-encoding": "chunked"
-}
-Request body: {"message":"Hello from client!"}
-```
