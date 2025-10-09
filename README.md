@@ -35,22 +35,36 @@ Local http server on 8081
 DHT public key f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o
 ```
 
-Send a request: `node example/client.js <dht-public-key>`
+Send request:
+
+- with pathname: `node example/client.js <dht-public-key>`
+- with header: `node example/client-header.js <dht-public-key>`
+
+Server will receive request
 
 ```
-Response: Hello from server!
+New request {
+  host: 'localhost:8080',
+  connection: 'keep-alive',
+  'content-type': 'text/plain;charset=UTF-8',
+  accept: '*/*',
+  'accept-language': '*',
+  'sec-fetch-mode': 'cors',
+  'user-agent': 'node',
+  'accept-encoding': 'gzip, deflate',
+  'content-length': '35'
+} {"message":"Request with pathname"}
 
-Request headers: {
-  "host": "localhost:8080",
-  "connection": "keep-alive",
-  "x-forwarded-for": "f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o",
-  "content-type": "text/plain;charset=UTF-8",
-  "accept": "*/*",
-  "accept-language": "*",
-  "sec-fetch-mode": "cors",
-  "user-agent": "node",
-  "accept-encoding": "gzip, deflate",
-  "content-length": "32"
-}
-Request body: {"message":"Hello from client!"}
+New request {
+  host: 'localhost:8080',
+  connection: 'keep-alive',
+  'dht-public-key': 'x4awsm6otrfirjt5g8a5e4sz4nrw354bq4fjqo979fnajzcd6tey',
+  'content-type': 'text/plain;charset=UTF-8',
+  accept: '*/*',
+  'accept-language': '*',
+  'sec-fetch-mode': 'cors',
+  'user-agent': 'node',
+  'accept-encoding': 'gzip, deflate',
+  'content-length': '33'
+} {"message":"Request with header"}
 ```

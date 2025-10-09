@@ -33,9 +33,15 @@ module.exports = function proxy(stream, proxyTo) {
 
       for (const line of ascii.split('\r\n')) {
         let match = line.match(PATHNAME_REGEX)
-        if (match) { proxy = match[1]; break }
+        if (match) {
+          proxy = match[1]
+          break
+        }
         match = line.match(HEADER_DHT_PUBLIC_KEY_REGEX)
-        if (match) { proxy = match[1]; break }
+        if (match) {
+          proxy = match[1]
+          break
+        }
       }
 
       stream.pause()
