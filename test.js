@@ -33,7 +33,7 @@ test('request with header', async (t) => {
   const res = await fetch(url, { method: 'POST', headers })
 
   const req = await server.req.promise
-  t.is(req.startsWith('POST /'), true, 'correct pathname')
+  t.ok(req.startsWith('POST /'), 'correct pathname')
   t.ok(req.includes(`host: localhost:${proxy.port}`), 'correct host header')
   t.ok(req.includes(`dht-public-key: ${server.dhtPublicKey}`), 'correct dht-public-key header')
 
