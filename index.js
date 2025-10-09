@@ -1,7 +1,7 @@
 const DEFAULT_MAX_BUFFER = 128 * 1024
 
-const DHT_PUBLIC_KEY = /^dht-public-key: /i
-const DHT_PUBLIC_KEY_LEN = 'dht-public-key: '.length
+const PATHNAME_REGEX = /^POST \/([^\s/]+) HTTP\/\d+\.\d+$/i
+const HEADER_DHT_PUBLIC_KEY_REGEX = /^dht-public-key: ([^\s/]+)/i
 
 module.exports = function proxy(stream, proxyTo) {
   const maxBuffer = DEFAULT_MAX_BUFFER
@@ -32,7 +32,16 @@ module.exports = function proxy(stream, proxyTo) {
       let dhtPublicKey = null
 
       for (const line of ascii.split('\r\n')) {
-        if (DHT_PUBLIC_KEY.test(line)) dhtPublicKey = line.slice(DHT_PUBLIC_KEY_LEN)
+        let match = line.match(PATHNAME_REGEX)
+        if (match) {
+          dhtPublicKey = match[1]
+          break
+        }
+        match = line.match(HEADER_DHT_PUBLIC_KEY_REGEX)
+        if (match) {
+          dhtPublicKey = match[1]
+          break
+        }
       }
 
       stream.pause()

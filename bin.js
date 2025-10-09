@@ -1,19 +1,16 @@
 #!/usr/bin/env node
 
 const net = require('net')
-const DHT = require('hyperdht')
+const HyperDHT = require('hyperdht')
 const idEnc = require('hypercore-id-encoding')
 
 const proxy = require('.')
 
 const PORT = process.argv[2] || 8080
 
-const dht = new DHT()
+const dht = new HyperDHT(opts)
 net
   .createServer((sock) => {
-    proxy(sock, (host) => {
-      const id = host.split('.')[0]
-      return dht.connect(idEnc.decode(id))
-    })
+    proxy(sock, (key) => dht.connect(idEnc.decode(key)))
   })
   .listen(PORT, () => console.log(`HTTP-to-DHT proxy on ${PORT}`))
