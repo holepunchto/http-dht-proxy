@@ -1,7 +1,7 @@
 const DHT_PUBLIC_KEY = process.argv[2]
-const proxyUrl = 'http:/localhost:8080'
+const HOST = process.argv[3] || 'localhost:8080'
 
-fetch(proxyUrl, {
+fetch(`http:/${HOST}`, {
   headers: { 'dht-public-key': DHT_PUBLIC_KEY },
   method: 'POST',
   body: JSON.stringify({ message: 'Request with header' })
