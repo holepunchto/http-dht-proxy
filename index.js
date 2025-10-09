@@ -1,22 +1,9 @@
-const net = require('net')
-const HyperDHT = require('hyperdht')
-const idEnc = require('hypercore-id-encoding')
-
 const DEFAULT_MAX_BUFFER = 128 * 1024
 
 const PATHNAME_REGEX = /^POST \/([^\s/]+) HTTP\/\d+\.\d+$/i
 const HEADER_DHT_PUBLIC_KEY_REGEX = /^dht-public-key: ([^\s/]+)/i
 
-function start(port, opts) {
-  const dht = new HyperDHT(opts)
-  net
-    .createServer((sock) => {
-      proxy(sock, (key) => dht.connect(idEnc.decode(key)))
-    })
-    .listen(port, () => console.log(`HTTP-to-DHT proxy on ${port}`))
-}
-
-function proxy(stream, proxyTo) {
+module.exports = function proxy(stream, proxyTo) {
   const maxBuffer = DEFAULT_MAX_BUFFER
 
   let buffer = null
@@ -106,5 +93,3 @@ function isEndOfHeader(data, i) {
 }
 
 function noop() {}
-
-module.exports = start
