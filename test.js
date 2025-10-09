@@ -2,110 +2,98 @@ const test = require('brittle')
 const idEnc = require('hypercore-id-encoding')
 const HyperDHT = require('hyperdht')
 const createTestnet = require('hyperdht/testnet')
-const { PassThrough } = require('stream')
+const net = require('net')
 const rrp = require('resolve-reject-promise')
 
 const proxy = require('.')
 
 test('request with pathname', async (t) => {
-  t.plan(2)
+  const { testnet, proxy, server } = await setup(t)
 
-  const testnet = await createTestnet()
-  t.teardown(() => testnet.destroy())
-  const { bootstrap } = testnet
+  const url = `http://localhost:${proxy.port}/${server.dhtPublicKey}`
+  fetch(url, { method: 'POST' }).catch(noop)
+  const res = await server.response.promise
 
-  const dhtServer = new HyperDHT({ bootstrap })
-  t.teardown(() => dhtServer.destroy())
+  t.ok(res.startsWith(`POST /${server.dhtPublicKey}`), 'correct pathname')
+  t.ok(res.includes(`host: localhost:${proxy.port}`), 'correct host header')
 
-  const server = dhtServer.createServer()
-  t.teardown(() => server.close())
-
-  const pr = rrp()
-  server.on('connection', (conn) => {
-    conn.on('error', (err) => {
-      if (err.code === 'ECONNRESET' || err.message === 'Writable stream closed prematurely') return
-      console.warn('DHT error:', err)
-    })
-    conn.on('data', (data) => pr.resolve(data.toString()))
-  })
-  await server.listen()
-  t.teardown(() => server.close())
-  const dhtPublicKey = idEnc.normalize(dhtServer.defaultKeyPair.publicKey)
-
-  const dhtClient = new HyperDHT({ bootstrap })
-  t.teardown(() => dhtClient.destroy())
-
-  const stream = new PassThrough()
-  proxy(stream, async (key) => {
-    t.is(key, dhtPublicKey, 'correct dht public key')
-    return dhtClient.connect(idEnc.decode(key))
-  })
-
-  const req = [
-    `POST /${dhtPublicKey} HTTP/1.1`,
-    `Host: localhost:8080`,
-    `Content-Length: 0`,
-    '\r\n'
-  ].join('\r\n')
-  stream.write(req)
-
-  const res = await pr.promise
-  t.is(res, req, 'received correct request')
-
-  await dhtClient.destroy()
   await server.close()
-  await dhtServer.destroy()
+  await proxy.close()
   await testnet.destroy()
 })
 
 test('request with header', async (t) => {
-  t.plan(2)
+  const { testnet, proxy, server } = await setup(t)
 
+  const url = `http://localhost:${proxy.port}`
+  const headers = { 'dht-public-key': server.dhtPublicKey }
+  fetch(url, { method: 'POST', headers }).catch(noop)
+  const res = await server.response.promise
+
+  t.is(res.startsWith('POST /'), true, 'correct pathname')
+  t.ok(res.includes(`dht-public-key: ${server.dhtPublicKey}`), 'correct dht-public-key header')
+
+  await server.close()
+  await proxy.close()
+  await testnet.destroy()
+})
+
+async function setup(t) {
   const testnet = await createTestnet()
   t.teardown(() => testnet.destroy())
   const { bootstrap } = testnet
 
-  const dhtServer = new HyperDHT({ bootstrap })
-  t.teardown(() => dhtServer.destroy())
+  const proxy = await setupProxy(t, { bootstrap })
+  const server = await setupServer(t, { bootstrap })
 
-  const server = dhtServer.createServer()
+  return { testnet, proxy, server }
+}
+
+async function setupServer(t, { bootstrap }) {
+  const dht = new HyperDHT({ bootstrap })
+  t.teardown(() => dht.destroy())
+
+  const server = dht.createServer()
   t.teardown(() => server.close())
 
-  const pr = rrp()
+  const response = rrp()
   server.on('connection', (conn) => {
     conn.on('error', (err) => {
       if (err.code === 'ECONNRESET' || err.message === 'Writable stream closed prematurely') return
       console.warn('DHT error:', err)
     })
-    conn.on('data', (data) => pr.resolve(data.toString()))
+    conn.on('data', (data) => response.resolve(data.toString()))
   })
   await server.listen()
-  t.teardown(() => server.close())
-  const dhtPublicKey = idEnc.normalize(dhtServer.defaultKeyPair.publicKey)
 
-  const dhtClient = new HyperDHT({ bootstrap })
-  t.teardown(() => dhtClient.destroy())
+  const dhtPublicKey = idEnc.normalize(dht.defaultKeyPair.publicKey)
 
-  const stream = new PassThrough()
-  proxy(stream, async (key) => {
-    t.is(key, dhtPublicKey, 'correct dht public key')
-    return dhtClient.connect(idEnc.decode(key))
+  async function close() {
+    await server.close()
+    await dht.destroy()
+  }
+
+  return { dhtPublicKey, response, close }
+}
+
+async function setupProxy(t, { bootstrap }) {
+  const dht = new HyperDHT({ bootstrap })
+  t.teardown(() => dht.destroy())
+
+  const server = net.createServer((sock) => {
+    proxy(sock, async (key) => dht.connect(idEnc.decode(key)))
   })
+  await new Promise((resolve) => server.listen(0, resolve))
+  t.teardown(() => server.close())
 
-  const req = [
-    `POST / HTTP/1.1`,
-    `Host: localhost:8080`,
-    `Content-Length: 0`,
-    `dht-public-key: ${dhtPublicKey}`,
-    '\r\n'
-  ].join('\r\n')
-  stream.write(req)
+  const port = server.address().port
 
-  const res = await pr.promise
-  t.is(res, req, 'received correct request')
+  async function close() {
+    server.close()
+    await dht.destroy()
+  }
 
-  await dhtClient.destroy()
-  await server.close()
-  await dhtServer.destroy()
-  await testnet.destroy()
-})
+  return { port, close }
+}
+
+function noop() {}
