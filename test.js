@@ -11,11 +11,14 @@ test('request with pathname', async (t) => {
   const { testnet, proxy, server } = await setup(t)
 
   const url = `http://localhost:${proxy.port}/${server.dhtPublicKey}`
-  fetch(url, { method: 'POST' }).catch(noop)
-  const res = await server.response.promise
+  const res = await fetch(url, { method: 'POST' })
 
-  t.ok(res.startsWith(`POST /${server.dhtPublicKey}`), 'correct pathname')
-  t.ok(res.includes(`host: localhost:${proxy.port}`), 'correct host header')
+  const req = await server.req.promise
+  t.ok(req.startsWith(`POST /${server.dhtPublicKey}`), 'correct pathname')
+  t.ok(req.includes(`host: localhost:${proxy.port}`), 'correct host header')
+
+  const text = await res.text()
+  t.is(text, 'OK', 'correct response')
 
   await server.close()
   await proxy.close()
@@ -27,11 +30,14 @@ test('request with header', async (t) => {
 
   const url = `http://localhost:${proxy.port}`
   const headers = { 'dht-public-key': server.dhtPublicKey }
-  fetch(url, { method: 'POST', headers }).catch(noop)
-  const res = await server.response.promise
+  const res = await fetch(url, { method: 'POST', headers })
 
-  t.is(res.startsWith('POST /'), true, 'correct pathname')
-  t.ok(res.includes(`dht-public-key: ${server.dhtPublicKey}`), 'correct dht-public-key header')
+  const req = await server.req.promise
+  t.is(req.startsWith('POST /'), true, 'correct pathname')
+  t.ok(req.includes(`dht-public-key: ${server.dhtPublicKey}`), 'correct dht-public-key header')
+
+  const text = await res.text()
+  t.is(text, 'OK', 'correct response')
 
   await server.close()
   await proxy.close()
@@ -56,13 +62,26 @@ async function setupServer(t, { bootstrap }) {
   const server = dht.createServer()
   t.teardown(() => server.close())
 
-  const response = rrp()
+  const req = rrp()
   server.on('connection', (conn) => {
+    let buffer = ''
+    conn.on('data', (data) => {
+      buffer += data.toString()
+      if (buffer.includes('\r\n\r\n')) {
+        req.resolve(buffer)
+        conn.write(
+          'HTTP/1.1 200 OK\r\n' +
+            'Content-Type: text/plain\r\n' +
+            'Content-Length: 2\r\n' +
+            '\r\n' +
+            'OK'
+        )
+      }
+    })
     conn.on('error', (err) => {
       if (err.code === 'ECONNRESET' || err.message === 'Writable stream closed prematurely') return
       console.warn('DHT error:', err)
     })
-    conn.on('data', (data) => response.resolve(data.toString()))
   })
   await server.listen()
 
@@ -73,7 +92,7 @@ async function setupServer(t, { bootstrap }) {
     await dht.destroy()
   }
 
-  return { dhtPublicKey, response, close }
+  return { dhtPublicKey, req, close }
 }
 
 async function setupProxy(t, { bootstrap }) {
@@ -95,5 +114,3 @@ async function setupProxy(t, { bootstrap }) {
 
   return { port, close }
 }
-
-function noop() {}
