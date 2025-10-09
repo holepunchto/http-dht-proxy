@@ -8,7 +8,7 @@ const proxy = require('.')
 
 const PORT = process.argv[2] || 8080
 
-const dht = new HyperDHT(opts)
+const dht = new HyperDHT()
 net
   .createServer((sock) => {
     proxy(sock, (key) => dht.connect(idEnc.decode(key)))
