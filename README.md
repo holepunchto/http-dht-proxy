@@ -58,7 +58,7 @@ New request {
 New request {
   host: 'localhost:8080',
   connection: 'keep-alive',
-  'dht-public-key': 'x4awsm6otrfirjt5g8a5e4sz4nrw354bq4fjqo979fnajzcd6tey',
+  'dht-public-key': 'f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o',
   'content-type': 'text/plain;charset=UTF-8',
   accept: '*/*',
   'accept-language': '*',
