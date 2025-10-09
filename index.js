@@ -1,9 +1,22 @@
+const net = require('net')
+const HyperDHT = require('hyperdht')
+const idEnc = require('hypercore-id-encoding')
+
 const DEFAULT_MAX_BUFFER = 128 * 1024
 
 const PATHNAME_REGEX = /^POST \/([^\s/]+) HTTP\/\d+\.\d+$/i
 const HEADER_DHT_PUBLIC_KEY_REGEX = /^dht-public-key: ([^\s/]+)/i
 
-module.exports = function proxy(stream, proxyTo) {
+function start(port, opts) {
+  const dht = new HyperDHT(opts)
+  net
+    .createServer((sock) => {
+      proxy(sock, (key) => dht.connect(idEnc.decode(key)))
+    })
+    .listen(port, () => console.log(`HTTP-to-DHT proxy on ${port}`))
+}
+
+function proxy(stream, proxyTo) {
   const maxBuffer = DEFAULT_MAX_BUFFER
 
   let buffer = null
@@ -29,17 +42,17 @@ module.exports = function proxy(stream, proxyTo) {
 
       const ascii = buffer.toString('ascii', 0, i - 3)
 
-      let proxy = null
+      let dhtPublicKey = null
 
       for (const line of ascii.split('\r\n')) {
         let match = line.match(PATHNAME_REGEX)
         if (match) {
-          proxy = match[1]
+          dhtPublicKey = match[1]
           break
         }
         match = line.match(HEADER_DHT_PUBLIC_KEY_REGEX)
         if (match) {
-          proxy = match[1]
+          dhtPublicKey = match[1]
           break
         }
       }
@@ -48,7 +61,7 @@ module.exports = function proxy(stream, proxyTo) {
       proxying = true
 
       try {
-        const dest = await proxyTo(proxy)
+        const dest = await proxyTo(dhtPublicKey)
 
         if (destroyed) {
           stream.destroy()
@@ -93,3 +106,5 @@ function isEndOfHeader(data, i) {
 }
 
 function noop() {}
+
+module.exports = start
