@@ -11,9 +11,13 @@ test('request with pathname', async (t) => {
   const { testnet, proxy, server } = await setup(t)
 
   const url = `http://localhost:${proxy.port}/${server.dhtPublicKey}`
-  const res = await fetch(url, { method: 'POST' })
+  const res = await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify({ message: 'Request with pathname' })
+  })
 
   const req = await server.req.promise
+  console.log('🚀 ~ req:', req)
   t.ok(req.startsWith(`POST /${server.dhtPublicKey}`), 'correct pathname')
   t.ok(req.includes(`host: localhost:${proxy.port}`), 'correct host header')
 
@@ -30,9 +34,14 @@ test('request with header', async (t) => {
 
   const url = `http://localhost:${proxy.port}`
   const headers = { 'dht-public-key': server.dhtPublicKey }
-  const res = await fetch(url, { method: 'POST', headers })
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ message: 'Request with header' })
+  })
 
   const req = await server.req.promise
+  console.log('🚀 ~ req:', req)
   t.ok(req.startsWith('POST /'), 'correct pathname')
   t.ok(req.includes(`host: localhost:${proxy.port}`), 'correct host header')
   t.ok(req.includes(`dht-public-key: ${server.dhtPublicKey}`), 'correct dht-public-key header')
@@ -68,8 +77,9 @@ async function setupServer(t, { bootstrap }) {
     let buffer = ''
     conn.on('data', (data) => {
       buffer += data.toString()
-      if (buffer.includes('\r\n\r\n')) {
-        req.resolve(buffer)
+      const parsed = parseHttpBuffer(buffer)
+      if (parsed) {
+        req.resolve(parsed)
         conn.write(
           'HTTP/1.1 200 OK\r\n' +
             'Content-Type: text/plain\r\n' +
@@ -114,4 +124,29 @@ async function setupProxy(t, { bootstrap }) {
   }
 
   return { port, close }
+}
+
+function parseHttpBuffer(buffer) {
+  const headerEnd = buffer.indexOf('\r\n\r\n')
+  if (headerEnd === -1) return null
+
+  const headersPart = buffer.slice(0, headerEnd)
+  const bodyPart = buffer.slice(headerEnd + 4)
+
+  const headersLines = headersPart.split('\r\n')
+  const requestLine = headersLines[0]
+  const headers = {}
+  for (let i = 1; i < headersLines.length; i++) {
+    const [key, value] = headersLines[i].split(': ')
+    if (key && value) headers[key.toLowerCase()] = value
+  }
+
+  const contentLength = parseInt(headers['content-length'] || '0', 10)
+  const body = bodyPart.slice(0, contentLength)
+
+  return {
+    requestLine,
+    headers,
+    body
+  }
 }
