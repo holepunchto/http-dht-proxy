@@ -11,15 +11,14 @@ test('request with pathname', async (t) => {
   const { testnet, proxy, server } = await setup(t)
 
   const url = `http://localhost:${proxy.port}/${server.dhtPublicKey}`
-  const res = await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({ message: 'Request with pathname' })
-  })
+  const body = JSON.stringify({ message: 'Request with pathname' })
+  const res = await fetch(url, { method: 'POST', body })
 
   const req = await server.req.promise
-  console.log('🚀 ~ req:', req)
-  t.ok(req.startsWith(`POST /${server.dhtPublicKey}`), 'correct pathname')
-  t.ok(req.includes(`host: localhost:${proxy.port}`), 'correct host header')
+  t.is(req.method, 'POST', 'correct method')
+  t.is(req.pathname, `/${server.dhtPublicKey}`, 'correct pathname')
+  t.is(req.headers.host, `localhost:${proxy.port}`, 'correct host header')
+  t.is(req.body, body, 'correct body')
 
   const text = await res.text()
   t.is(text, 'OK', 'correct response')
@@ -34,17 +33,15 @@ test('request with header', async (t) => {
 
   const url = `http://localhost:${proxy.port}`
   const headers = { 'dht-public-key': server.dhtPublicKey }
-  const res = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ message: 'Request with header' })
-  })
+  const body = JSON.stringify({ message: 'Request with header' })
+  const res = await fetch(url, { method: 'POST', headers, body })
 
   const req = await server.req.promise
-  console.log('🚀 ~ req:', req)
-  t.ok(req.startsWith('POST /'), 'correct pathname')
-  t.ok(req.includes(`host: localhost:${proxy.port}`), 'correct host header')
-  t.ok(req.includes(`dht-public-key: ${server.dhtPublicKey}`), 'correct dht-public-key header')
+  t.is(req.method, 'POST', 'correct method')
+  t.is(req.pathname, '/', 'correct pathname')
+  t.is(req.headers.host, `localhost:${proxy.port}`, 'correct host header')
+  t.is(req.headers['dht-public-key'], server.dhtPublicKey, 'correct dht-public-key header')
+  t.is(req.body, body, 'correct body')
 
   const text = await res.text()
   t.is(text, 'OK', 'correct response')
@@ -134,7 +131,7 @@ function parseHttpBuffer(buffer) {
   const bodyPart = buffer.slice(headerEnd + 4)
 
   const headersLines = headersPart.split('\r\n')
-  const requestLine = headersLines[0]
+  const [method, pathname, scheme] = headersLines[0].split(' ')
   const headers = {}
   for (let i = 1; i < headersLines.length; i++) {
     const [key, value] = headersLines[i].split(': ')
@@ -144,9 +141,5 @@ function parseHttpBuffer(buffer) {
   const contentLength = parseInt(headers['content-length'] || '0', 10)
   const body = bodyPart.slice(0, contentLength)
 
-  return {
-    requestLine,
-    headers,
-    body
-  }
+  return { method, pathname, scheme, headers, body }
 }
