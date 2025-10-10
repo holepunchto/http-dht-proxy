@@ -138,7 +138,7 @@ function parseHttpBuffer(buffer) {
     if (key && value) headers[key.toLowerCase()] = value
   }
 
-  const contentLength = parseInt(headers['content-length'] || '0', 10)
+  const contentLength = +(headers['content-length'] || 0)
   const body = bodyPart.slice(0, contentLength)
 
   return { method, pathname, scheme, headers, body }
