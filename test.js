@@ -28,6 +28,27 @@ test('request with pathname', async (t) => {
   await testnet.destroy()
 })
 
+test('request with subdomain', async (t) => {
+  const { testnet, proxy, server } = await setup(t)
+
+  const url = `http://${server.dhtPublicKey}.localhost:${proxy.port}`
+  const body = JSON.stringify({ message: 'Request with subdomain' })
+  const res = await fetch(url, { method: 'POST', body })
+
+  const req = await server.req.promise
+  t.is(req.method, 'POST', 'correct method')
+  t.is(req.pathname, '/', 'correct pathname')
+  t.is(req.headers.host, `${server.dhtPublicKey}.localhost:${proxy.port}`, 'correct host header')
+  t.is(req.body, body, 'correct body')
+
+  const text = await res.text()
+  t.is(text, 'OK', 'correct response')
+
+  await server.close()
+  await proxy.close()
+  await testnet.destroy()
+})
+
 test('request with header', async (t) => {
   const { testnet, proxy, server } = await setup(t)
 

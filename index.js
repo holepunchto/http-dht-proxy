@@ -1,7 +1,8 @@
 const DEFAULT_MAX_BUFFER = 128 * 1024
 
-const PATHNAME_REGEX = /^POST \/([^\s/]+) HTTP\/\d+\.\d+$/i
+const HOST_SUBDOMAIN_REGEX = /^host: ([^.\s]+)\..+/i
 const HEADER_DHT_PUBLIC_KEY_REGEX = /^dht-public-key: ([^\s/]+)/i
+const PATHNAME_REGEX = /^POST \/([^\s/]+) HTTP\/\d+\.\d+$/i
 
 module.exports = function proxy(stream, proxyTo) {
   const maxBuffer = DEFAULT_MAX_BUFFER
@@ -32,7 +33,12 @@ module.exports = function proxy(stream, proxyTo) {
       let dhtPublicKey = null
 
       for (const line of ascii.split('\r\n')) {
-        let match = line.match(PATHNAME_REGEX)
+        let match = line.match(HOST_SUBDOMAIN_REGEX)
+        if (match) {
+          dhtPublicKey = match[1]
+          break
+        }
+        match = line.match(PATHNAME_REGEX)
         if (match) {
           dhtPublicKey = match[1]
           break

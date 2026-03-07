@@ -37,7 +37,8 @@ DHT public key f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o
 
 Send request:
 
-- with pathname: `node example/client.js <dht-public-key>`
+- with subdomain: `node example/client.js <dht-public-key>`
+- with pathname: `node example/client-pathname.js <dht-public-key>`
 - with header: `node example/client-header.js <dht-public-key>`
 
 Server will receive request
