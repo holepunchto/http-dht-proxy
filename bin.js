@@ -13,10 +13,23 @@ const dht = new HyperDHT({
   ...(BOOTSTRAP && { bootstrap: JSON.parse(BOOTSTRAP) })
 })
 const server = net.createServer((sock) => {
-  sock.on('error', (err) => console.error('Socket error:', err))
   proxy(sock, (host) => {
-    const key = host.split('.')[0]
-    return dht.connect(idEnc.decode(key))
+    try {
+      const key = host.split('.')[0]
+      return dht.connect(idEnc.decode(key))
+    } catch (err) {
+      const body = JSON.stringify({ error: err.message })
+      sock.end(
+        `HTTP/1.1 400 Error\r\n` +
+          `Content-Type: application/json\r\n` +
+          `Content-Length: ${Buffer.byteLength(body)}\r\n` +
+          `Connection: close\r\n` +
+          `\r\n` +
+          body
+      )
+      return null
+    }
   })
 })
+
 server.listen(+PORT, () => console.log(`HTTP-to-DHT proxy on ${server.address().port}`))
