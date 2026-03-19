@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 const net = require('net')
-const proxy = require('http-forward-host')
-const HyperDHT = require('hyperdht')
-const idEnc = require('hypercore-id-encoding')
 const process = require('process')
+const proxy = require('http-forward-host')
+const idEnc = require('hypercore-id-encoding')
+const HyperDHT = require('hyperdht')
 
 const PORT = process.argv[2] || 8080
 const BOOTSTRAP = process.argv[3]

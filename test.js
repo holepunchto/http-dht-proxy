@@ -7,7 +7,6 @@ const idEnc = require('hypercore-id-encoding')
 const HyperDHT = require('hyperdht')
 const createTestnet = require('hyperdht/testnet')
 const NewlineDecoder = require('newline-decoder')
-const net = require('net')
 const path = require('path')
 const process = require('process')
 const rrp = require('resolve-reject-promise')
@@ -37,9 +36,7 @@ async function setup(t) {
   const { bootstrap } = testnet
 
   const proxy = await setupProxy(t, { bootstrap })
-  const server = isBare
-    ? await setupServerBare(t, { bootstrap })
-    : await setupServer(t, { bootstrap })
+  const server = await setupServer(t, { bootstrap })
 
   return { proxy, server }
 }
@@ -102,47 +99,6 @@ async function setupServer(t, { bootstrap }) {
     },
     { order: 4000 }
   )
-
-  await dhtServer.listen()
-  const dhtPublicKey = idEnc.normalize(dht.defaultKeyPair.publicKey)
-
-  return { dhtPublicKey, req: reqPromise.promise }
-}
-
-async function setupServerBare(t, { bootstrap }) {
-  const reqPromise = rrp()
-  const httpServer = http.createServer((req, res) => {
-    let body = ''
-    req.on('data', (d) => {
-      body += d
-    })
-    req.on('end', () => {
-      reqPromise.resolve({ method: req.method, pathname: req.url, headers: req.headers, body })
-      res.end('ok')
-    })
-  })
-
-  const dht = new HyperDHT({ bootstrap })
-
-  t.teardown(
-    async () => {
-      await dht.destroy()
-      httpServer.close()
-    },
-    { order: 4000 }
-  )
-
-  await new Promise((resolve) => httpServer.listen(0, '127.0.0.1', resolve))
-  const port = httpServer.address().port
-
-  const dhtServer = dht.createServer((conn) => {
-    const local = net.connect(port, '127.0.0.1')
-    conn.on('error', (err) => {
-      if (err.code === 'ECONNRESET' || err.message === 'Writable stream closed prematurely') return
-      console.warn('DHT error:', err)
-    })
-    conn.pipe(local).pipe(conn)
-  })
 
   await dhtServer.listen()
   const dhtPublicKey = idEnc.normalize(dht.defaultKeyPair.publicKey)
