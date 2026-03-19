@@ -44,15 +44,10 @@ test('invalid dht key', async (t) => {
 
   const url = `http://not-a-valid-key.localhost:${proxy.port}`
 
-  if (isBare) {
-    // bare-fetch throws a NETWORK_ERROR instead of returning a 502 response
-    await t.exception(() => fetch(url, { method: 'GET' }), 'fetch throws on invalid key')
-  } else {
-    const res = await fetch(url, { method: 'GET' })
-    t.is(res.status, 502, 'returns 502 for invalid key')
-    const body = await res.json()
-    t.is(body.error, 'Invalid Hypercore key', 'response contains error message')
-  }
+  const res = await fetch(url, { method: 'GET' })
+  t.is(res.status, 502, 'returns 502 for invalid key')
+  const body = await res.json()
+  t.is(body.error, 'Invalid Hypercore key', 'response contains error message')
 })
 
 test('unavailable upstream', async (t) => {
@@ -68,15 +63,10 @@ test('unavailable upstream', async (t) => {
   const unreachableKey = idEnc.normalize(dht.defaultKeyPair.publicKey)
   const url = `http://${unreachableKey}.localhost:${proxy.port}`
 
-  if (isBare) {
-    // bare-fetch throws a NETWORK_ERROR instead of returning a 502 response
-    await t.exception(() => fetch(url, { method: 'GET' }), 'fetch throws on unavailable upstream')
-  } else {
-    const res = await fetch(url, { method: 'GET' })
-    t.is(res.status, 502, 'returns 502 for unavailable upstream')
-    const body = await res.json()
-    t.is(body.error, 'PEER_NOT_FOUND: Peer not found', 'response contains error message')
-  }
+  const res = await fetch(url, { method: 'GET' })
+  t.is(res.status, 502, 'returns 502 for unavailable upstream')
+  const body = await res.json()
+  t.is(body.error, 'PEER_NOT_FOUND: Peer not found', 'response contains error message')
 })
 
 async function setupProxy(t, { bootstrap }) {
