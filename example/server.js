@@ -11,12 +11,11 @@ const SEED = process.argv[4]
 http
   .createServer((req, res) => {
     let body = ''
-    req.on('data', (chunk) => {
-      body += chunk
+    req.on('data', (d) => {
+      body += d
     })
     req.on('end', () => {
       console.log('New request', req.headers, body)
-      res.writeHead(200, { 'Content-Type': 'text/plain' })
       res.end('ok')
     })
   })

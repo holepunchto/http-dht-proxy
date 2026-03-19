@@ -1,6 +1,7 @@
 const { isBare } = require('which-runtime')
 const test = require('brittle')
 const fetch = isBare ? require('bare-fetch') : global.fetch
+const http = require('http')
 const proxy = require('http-forward-host')
 const idEnc = require('hypercore-id-encoding')
 const HyperDHT = require('hyperdht')
@@ -15,14 +16,14 @@ test('basic', async (t) => {
   const body = JSON.stringify({ message: 'Hello world!' })
   const res = await fetch(url, { method: 'POST', body })
 
-  const req = await server.req.promise
+  const req = await server.req
   t.is(req.method, 'POST', 'correct method')
   t.is(req.pathname, '/', 'correct pathname')
   t.is(req.headers.host, `${server.dhtPublicKey}.localhost:${proxy.port}`, 'correct host header')
   t.is(req.body, body, 'correct body')
 
   const text = await res.text()
-  t.is(text, 'OK', 'correct response')
+  t.is(text, 'ok', 'correct response')
 })
 
 async function setup(t) {
@@ -46,11 +47,13 @@ async function setupProxy(t, { bootstrap }) {
     })
   })
 
-  async function close() {
-    server.close()
-    await dht.destroy()
-  }
-  t.teardown(close, { order: 4000 })
+  t.teardown(
+    async () => {
+      server.close()
+      await dht.destroy()
+    },
+    { order: 4000 }
+  )
 
   await new Promise((resolve) => server.listen(0, resolve))
   const port = server.address().port
@@ -59,83 +62,42 @@ async function setupProxy(t, { bootstrap }) {
 }
 
 async function setupServer(t, { bootstrap }) {
-  const dht = new HyperDHT({ bootstrap })
-  const server = dht.createServer()
-
-  const req = rrp()
-  server.on('connection', (conn) => {
-    let buffer = ''
-    conn.on('data', (data) => {
-      buffer += data.toString()
-      const parsed = parseHttpBuffer(buffer)
-      if (parsed) {
-        req.resolve(parsed)
-        conn.write(
-          'HTTP/1.1 200 OK\r\n' +
-            'Content-Type: text/plain\r\n' +
-            'Content-Length: 2\r\n' +
-            '\r\n' +
-            'OK'
-        )
-      }
+  const reqPromise = rrp()
+  const httpServer = http.createServer((req, res) => {
+    let body = ''
+    req.on('data', (d) => {
+      body += d
     })
+    req.on('end', () => {
+      reqPromise.resolve({ method: req.method, pathname: req.url, headers: req.headers, body })
+      res.end('ok')
+    })
+  })
+
+  const dht = new HyperDHT({ bootstrap })
+
+  t.teardown(
+    async () => {
+      httpServer.close()
+      await dht.destroy()
+    },
+    { order: 4000 }
+  )
+
+  await new Promise((resolve) => httpServer.listen(0, resolve))
+  const port = httpServer.address().port
+
+  const dhtServer = dht.createServer((conn) => {
+    const local = net.connect(port, '127.0.0.1')
     conn.on('error', (err) => {
       if (err.code === 'ECONNRESET' || err.message === 'Writable stream closed prematurely') return
       console.warn('DHT error:', err)
     })
+    conn.pipe(local).pipe(conn)
   })
 
-  async function close() {
-    await server.close()
-    await dht.destroy()
-  }
-  t.teardown(close, { order: 4000 })
-
-  await server.listen()
+  await dhtServer.listen()
   const dhtPublicKey = idEnc.normalize(dht.defaultKeyPair.publicKey)
 
-  return { dhtPublicKey, req }
-}
-
-function parseHttpBuffer(buffer) {
-  const headerEnd = buffer.indexOf('\r\n\r\n')
-  if (headerEnd === -1) return null
-
-  const headersPart = buffer.slice(0, headerEnd)
-  const bodyPart = buffer.slice(headerEnd + 4)
-
-  const headersLines = headersPart.split('\r\n')
-  const [method, pathname, scheme] = headersLines[0].split(' ')
-  const headers = {}
-  for (let i = 1; i < headersLines.length; i++) {
-    const [key, value] = headersLines[i].split(': ')
-    if (key && value) headers[key.toLowerCase()] = value
-  }
-
-  let body
-  if (headers['transfer-encoding'] === 'chunked') {
-    body = parseChunkedBody(bodyPart)
-    if (body === null) return null
-  } else {
-    const contentLength = +(headers['content-length'] || 0)
-    if (bodyPart.length < contentLength) return null
-    body = bodyPart.slice(0, contentLength)
-  }
-
-  return { method, pathname, scheme, headers, body }
-}
-
-function parseChunkedBody(data) {
-  let body = ''
-  let rest = data
-  while (true) {
-    const lineEnd = rest.indexOf('\r\n')
-    if (lineEnd === -1) return null
-    const size = parseInt(rest.slice(0, lineEnd), 16)
-    if (size === 0) return body
-    rest = rest.slice(lineEnd + 2)
-    if (rest.length < size + 2) return null
-    body += rest.slice(0, size)
-    rest = rest.slice(size + 2)
-  }
+  return { dhtPublicKey, req: reqPromise.promise }
 }
