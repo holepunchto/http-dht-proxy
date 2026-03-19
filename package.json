@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "bare-fetch": "^2.7.3",
-    "bare-http1": "^2.0.0",
+    "bare-http1": "^4.5.2",
     "bare-path": "^3.0.0",
     "brittle": "^3.19.0",
     "lunte": "^1.6.0",
