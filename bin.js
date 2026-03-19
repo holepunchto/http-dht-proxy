@@ -14,9 +14,23 @@ const dht = new HyperDHT({
 })
 const server = net.createServer((sock) => {
   proxy(sock, async (host) => {
+    let dhtPublicKey
     try {
-      const key = host.split('.')[0]
-      const socket = dht.connect(idEnc.decode(key))
+      dhtPublicKey = idEnc.decode(host.split('.')[0])
+    } catch (err) {
+      const body = JSON.stringify({ error: err.message })
+      sock.end(
+        `HTTP/1.1 400 Bad Request\r\n` +
+          `Content-Type: application/json\r\n` +
+          `Content-Length: ${Buffer.byteLength(body)}\r\n` +
+          `Connection: close\r\n` +
+          `\r\n` +
+          body
+      )
+      return null
+    }
+    try {
+      const socket = dht.connect(dhtPublicKey)
       await new Promise((resolve, reject) => {
         socket.on('open', resolve)
         socket.on('error', reject)

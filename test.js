@@ -45,7 +45,7 @@ test('invalid dht key', async (t) => {
   const url = `http://not-a-valid-key.localhost:${proxy.port}`
 
   const res = await fetch(url, { method: 'GET' })
-  t.is(res.status, 502, 'returns 502 for invalid key')
+  t.is(res.status, 400, 'returns 400 for invalid key')
   const body = await res.json()
   t.is(body.error, 'Invalid Hypercore key', 'response contains error message')
 })
