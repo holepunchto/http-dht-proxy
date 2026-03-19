@@ -13,6 +13,7 @@ const dht = new HyperDHT({
   ...(BOOTSTRAP && { bootstrap: JSON.parse(BOOTSTRAP) })
 })
 const server = net.createServer((sock) => {
+  sock.on('error', (err) => console.error('Socket error:', err))
   proxy(sock, (host) => {
     const key = host.split('.')[0]
     return dht.connect(idEnc.decode(key))
