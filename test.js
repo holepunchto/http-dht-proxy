@@ -14,7 +14,12 @@ const rrp = require('resolve-reject-promise')
 const EXECUTABLE = path.join(__dirname, isBare ? 'bin-bare.js' : 'bin.js')
 
 test('basic', async (t) => {
-  const { proxy, server } = await setup(t)
+  const testnet = await createTestnet()
+  t.teardown(() => testnet.destroy(), { order: 5000 })
+  const { bootstrap } = testnet
+
+  const proxy = await setupProxy(t, { bootstrap })
+  const server = await setupServer(t, { bootstrap })
 
   const url = `http://${server.dhtPublicKey}.localhost:${proxy.port}`
   const body = JSON.stringify({ message: 'Hello world!' })
@@ -30,16 +35,49 @@ test('basic', async (t) => {
   t.is(text, 'ok', 'correct response')
 })
 
-async function setup(t) {
+test('invalid dht key', async (t) => {
   const testnet = await createTestnet()
   t.teardown(() => testnet.destroy(), { order: 5000 })
   const { bootstrap } = testnet
 
   const proxy = await setupProxy(t, { bootstrap })
-  const server = await setupServer(t, { bootstrap })
 
-  return { proxy, server }
-}
+  const url = `http://not-a-valid-key.localhost:${proxy.port}`
+
+  if (isBare) {
+    // bare-fetch throws a NETWORK_ERROR instead of returning a 502 response
+    await t.exception(() => fetch(url, { method: 'GET' }), 'fetch throws on invalid key')
+  } else {
+    const res = await fetch(url, { method: 'GET' })
+    t.is(res.status, 502, 'returns 502 for invalid key')
+    const body = await res.json()
+    t.is(body.error, 'Invalid Hypercore key', 'response contains error message')
+  }
+})
+
+test('unavailable upstream', async (t) => {
+  const testnet = await createTestnet()
+  t.teardown(() => testnet.destroy(), { order: 5000 })
+  const { bootstrap } = testnet
+
+  const proxy = await setupProxy(t, { bootstrap })
+
+  const dht = new HyperDHT({ bootstrap })
+  t.teardown(() => dht.destroy(), { order: 4000 })
+
+  const unreachableKey = idEnc.normalize(dht.defaultKeyPair.publicKey)
+  const url = `http://${unreachableKey}.localhost:${proxy.port}`
+
+  if (isBare) {
+    // bare-fetch throws a NETWORK_ERROR instead of returning a 502 response
+    await t.exception(() => fetch(url, { method: 'GET' }), 'fetch throws on unavailable upstream')
+  } else {
+    const res = await fetch(url, { method: 'GET' })
+    t.is(res.status, 502, 'returns 502 for unavailable upstream')
+    const body = await res.json()
+    t.is(body.error, 'PEER_NOT_FOUND: Peer not found', 'response contains error message')
+  }
+})
 
 async function setupProxy(t, { bootstrap }) {
   const tProxy = t.test('Proxy')
