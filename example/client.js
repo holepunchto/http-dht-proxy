@@ -5,5 +5,8 @@ fetch(`http://${DHT_PUBLIC_KEY}.${PROXY}`, {
   method: 'POST',
   body: JSON.stringify({ message: 'Hello world!' })
 })
-  .then((res) => res.text())
+  .then((res) => {
+    console.log(`Status: ${res.status}`)
+    return res.text()
+  })
   .then((res) => console.log('Response:', res))
