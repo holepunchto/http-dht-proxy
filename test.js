@@ -1,13 +1,17 @@
 const { isBare } = require('which-runtime')
 const test = require('brittle')
 const fetch = isBare ? require('bare-fetch') : global.fetch
+const { spawn } = require('child_process')
 const http = require('http')
-const proxy = require('http-forward-host')
 const idEnc = require('hypercore-id-encoding')
 const HyperDHT = require('hyperdht')
 const createTestnet = require('hyperdht/testnet')
-const net = require('net')
+const NewlineDecoder = require('newline-decoder')
+const path = require('path')
+const process = require('process')
 const rrp = require('resolve-reject-promise')
+
+const EXECUTABLE = path.join(__dirname, isBare ? 'bin-bare.js' : 'bin.js')
 
 test('basic', async (t) => {
   const { proxy, server } = await setup(t)
@@ -38,25 +42,30 @@ async function setup(t) {
 }
 
 async function setupProxy(t, { bootstrap }) {
-  const dht = new HyperDHT({ bootstrap })
+  const tProxy = t.test('Proxy')
+  tProxy.plan(1)
 
-  const server = net.createServer((sock) => {
-    proxy(sock, async (host) => {
-      const key = host.split('.')[0]
-      return dht.connect(idEnc.decode(key))
-    })
+  const proc = spawn(process.execPath, [EXECUTABLE, '0', JSON.stringify(bootstrap)])
+  t.teardown(() => proc.kill('SIGKILL'), { order: 4000 })
+  process.on('exit', () => {
+    proc.kill('SIGKILL')
+  })
+  proc.stderr.on('data', (d) => {
+    console.error(d.toString())
+    t.fail('There should be no stderr')
   })
 
-  t.teardown(
-    async () => {
-      server.close()
-      await dht.destroy()
-    },
-    { order: 4000 }
-  )
-
-  await new Promise((resolve) => server.listen(0, resolve))
-  const port = server.address().port
+  let port = ''
+  const stdoutDec = new NewlineDecoder('utf-8')
+  proc.stdout.on('data', (d) => {
+    for (const line of stdoutDec.push(d)) {
+      if (line.includes('HTTP-to-DHT proxy on')) {
+        tProxy.pass('Proxy started')
+        port = line.split('HTTP-to-DHT proxy on ')[1]
+      }
+    }
+  })
+  await tProxy
 
   return { port }
 }
