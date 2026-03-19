@@ -13,14 +13,19 @@ const dht = new HyperDHT({
   ...(BOOTSTRAP && { bootstrap: JSON.parse(BOOTSTRAP) })
 })
 const server = net.createServer((sock) => {
-  proxy(sock, (host) => {
+  proxy(sock, async (host) => {
     try {
       const key = host.split('.')[0]
-      return dht.connect(idEnc.decode(key))
+      const socket = dht.connect(idEnc.decode(key))
+      await new Promise((resolve, reject) => {
+        socket.on('open', resolve)
+        socket.on('error', reject)
+      })
+      return socket
     } catch (err) {
       const body = JSON.stringify({ error: err.message })
       sock.end(
-        `HTTP/1.1 400 Error\r\n` +
+        `HTTP/1.1 502 Bad Gateway\r\n` +
           `Content-Type: application/json\r\n` +
           `Content-Length: ${Buffer.byteLength(body)}\r\n` +
           `Connection: close\r\n` +
