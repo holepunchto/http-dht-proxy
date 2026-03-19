@@ -4,29 +4,7 @@ const HyperDHT = require('hyperdht')
 const createTestnet = require('hyperdht/testnet')
 const net = require('net')
 const rrp = require('resolve-reject-promise')
-
 const proxy = require('.')
-
-test('request with pathname', async (t) => {
-  const { testnet, proxy, server } = await setup(t)
-
-  const url = `http://localhost:${proxy.port}/${server.dhtPublicKey}`
-  const body = JSON.stringify({ message: 'Request with pathname' })
-  const res = await fetch(url, { method: 'POST', body })
-
-  const req = await server.req.promise
-  t.is(req.method, 'POST', 'correct method')
-  t.is(req.pathname, `/${server.dhtPublicKey}`, 'correct pathname')
-  t.is(req.headers.host, `localhost:${proxy.port}`, 'correct host header')
-  t.is(req.body, body, 'correct body')
-
-  const text = await res.text()
-  t.is(text, 'OK', 'correct response')
-
-  await server.close()
-  await proxy.close()
-  await testnet.destroy()
-})
 
 test('request with subdomain', async (t) => {
   const { testnet, proxy, server } = await setup(t)

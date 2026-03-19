@@ -3,7 +3,7 @@ const PROXY = process.argv[3] || 'localhost:8080'
 
 fetch(`http://${DHT_PUBLIC_KEY}.${PROXY}`, {
   method: 'POST',
-  body: JSON.stringify({ message: 'Request with host subdomain' })
+  body: JSON.stringify({ message: 'Hello world!' })
 })
   .then((res) => res.text())
   .then((res) => console.log('Response:', res))
