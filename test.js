@@ -112,8 +112,30 @@ function parseHttpBuffer(buffer) {
     if (key && value) headers[key.toLowerCase()] = value
   }
 
-  const contentLength = +(headers['content-length'] || 0)
-  const body = bodyPart.slice(0, contentLength)
+  let body
+  if (headers['transfer-encoding'] === 'chunked') {
+    body = parseChunkedBody(bodyPart)
+    if (body === null) return null
+  } else {
+    const contentLength = +(headers['content-length'] || 0)
+    if (bodyPart.length < contentLength) return null
+    body = bodyPart.slice(0, contentLength)
+  }
 
   return { method, pathname, scheme, headers, body }
+}
+
+function parseChunkedBody(data) {
+  let body = ''
+  let rest = data
+  while (true) {
+    const lineEnd = rest.indexOf('\r\n')
+    if (lineEnd === -1) return null
+    const size = parseInt(rest.slice(0, lineEnd), 16)
+    if (size === 0) return body
+    rest = rest.slice(lineEnd + 2)
+    if (rest.length < size + 2) return null
+    body += rest.slice(0, size)
+    rest = rest.slice(size + 2)
+  }
 }
