@@ -1,16 +1,18 @@
+const { isBare } = require('which-runtime')
 const test = require('brittle')
+const fetch = isBare ? require('bare-fetch') : global.fetch
+const proxy = require('http-forward-host')
 const idEnc = require('hypercore-id-encoding')
 const HyperDHT = require('hyperdht')
 const createTestnet = require('hyperdht/testnet')
 const net = require('net')
 const rrp = require('resolve-reject-promise')
-const proxy = require('.')
 
-test('request with subdomain', async (t) => {
-  const { testnet, proxy, server } = await setup(t)
+test('basic', async (t) => {
+  const { proxy, server } = await setup(t)
 
   const url = `http://${server.dhtPublicKey}.localhost:${proxy.port}`
-  const body = JSON.stringify({ message: 'Request with subdomain' })
+  const body = JSON.stringify({ message: 'Hello world!' })
   const res = await fetch(url, { method: 'POST', body })
 
   const req = await server.req.promise
@@ -21,52 +23,44 @@ test('request with subdomain', async (t) => {
 
   const text = await res.text()
   t.is(text, 'OK', 'correct response')
-
-  await server.close()
-  await proxy.close()
-  await testnet.destroy()
-})
-
-test('request with header', async (t) => {
-  const { testnet, proxy, server } = await setup(t)
-
-  const url = `http://localhost:${proxy.port}`
-  const headers = { 'dht-public-key': server.dhtPublicKey }
-  const body = JSON.stringify({ message: 'Request with header' })
-  const res = await fetch(url, { method: 'POST', headers, body })
-
-  const req = await server.req.promise
-  t.is(req.method, 'POST', 'correct method')
-  t.is(req.pathname, '/', 'correct pathname')
-  t.is(req.headers.host, `localhost:${proxy.port}`, 'correct host header')
-  t.is(req.headers['dht-public-key'], server.dhtPublicKey, 'correct dht-public-key header')
-  t.is(req.body, body, 'correct body')
-
-  const text = await res.text()
-  t.is(text, 'OK', 'correct response')
-
-  await server.close()
-  await proxy.close()
-  await testnet.destroy()
 })
 
 async function setup(t) {
   const testnet = await createTestnet()
-  t.teardown(() => testnet.destroy())
+  t.teardown(() => testnet.destroy(), { order: 5000 })
   const { bootstrap } = testnet
 
   const proxy = await setupProxy(t, { bootstrap })
   const server = await setupServer(t, { bootstrap })
 
-  return { testnet, proxy, server }
+  return { proxy, server }
+}
+
+async function setupProxy(t, { bootstrap }) {
+  const dht = new HyperDHT({ bootstrap })
+
+  const server = net.createServer((sock) => {
+    proxy(sock, async (host) => {
+      const key = host.split('.')[0]
+      return dht.connect(idEnc.decode(key))
+    })
+  })
+
+  async function close() {
+    server.close()
+    await dht.destroy()
+  }
+  t.teardown(close, { order: 4000 })
+
+  await new Promise((resolve) => server.listen(0, resolve))
+  const port = server.address().port
+
+  return { port }
 }
 
 async function setupServer(t, { bootstrap }) {
   const dht = new HyperDHT({ bootstrap })
-  t.teardown(() => dht.destroy())
-
   const server = dht.createServer()
-  t.teardown(() => server.close())
 
   const req = rrp()
   server.on('connection', (conn) => {
@@ -90,36 +84,17 @@ async function setupServer(t, { bootstrap }) {
       console.warn('DHT error:', err)
     })
   })
-  await server.listen()
-
-  const dhtPublicKey = idEnc.normalize(dht.defaultKeyPair.publicKey)
 
   async function close() {
     await server.close()
     await dht.destroy()
   }
+  t.teardown(close, { order: 4000 })
 
-  return { dhtPublicKey, req, close }
-}
+  await server.listen()
+  const dhtPublicKey = idEnc.normalize(dht.defaultKeyPair.publicKey)
 
-async function setupProxy(t, { bootstrap }) {
-  const dht = new HyperDHT({ bootstrap })
-  t.teardown(() => dht.destroy())
-
-  const server = net.createServer((sock) => {
-    proxy(sock, async (key) => dht.connect(idEnc.decode(key)))
-  })
-  await new Promise((resolve) => server.listen(0, resolve))
-  t.teardown(() => server.close())
-
-  const port = server.address().port
-
-  async function close() {
-    server.close()
-    await dht.destroy()
-  }
-
-  return { port, close }
+  return { dhtPublicKey, req }
 }
 
 function parseHttpBuffer(buffer) {
