@@ -35,6 +35,10 @@
     "net": {
       "bare": "bare-net",
       "default": "net"
+    },
+    "process": {
+      "bare": "bare-process",
+      "default": "process"
     }
   },
   "author": "Holepunch",
