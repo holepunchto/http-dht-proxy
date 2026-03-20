@@ -18,7 +18,7 @@ const server = net.createServer((sock) => {
     try {
       dhtPublicKey = idEnc.decode(host.split('.')[0])
     } catch (err) {
-      console.error(err)
+      console.info(err)
       const body = JSON.stringify({ error: err.message })
       sock.end(
         `HTTP/1.1 400 Bad Request\r\n` +
@@ -38,7 +38,7 @@ const server = net.createServer((sock) => {
       })
       return socket
     } catch (err) {
-      console.error(err)
+      console.info(err)
       const body = JSON.stringify({ error: err.message })
       sock.end(
         `HTTP/1.1 502 Bad Gateway\r\n` +
