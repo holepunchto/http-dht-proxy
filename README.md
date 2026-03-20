@@ -32,39 +32,19 @@ Start sample server: `node example/server.js`
 
 ```
 Local http server on 8081
-DHT public key f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o
+DHT public key abcdef123456
 ```
 
-Send request:
+Send sample request: `node example/client.js <dht-public-key>`, e.g.
 
-- with pathname: `node example/client.js <dht-public-key>`
-- with header: `node example/client-header.js <dht-public-key>`
+```
+node example/client.js abcdef123456
+```
 
-Server will receive request
+Server will receive request, e.g.
 
 ```
 New request {
-  host: 'localhost:8080',
-  connection: 'keep-alive',
-  'content-type': 'text/plain;charset=UTF-8',
-  accept: '*/*',
-  'accept-language': '*',
-  'sec-fetch-mode': 'cors',
-  'user-agent': 'node',
-  'accept-encoding': 'gzip, deflate',
-  'content-length': '35'
-} {"message":"Request with pathname"}
-
-New request {
-  host: 'localhost:8080',
-  connection: 'keep-alive',
-  'dht-public-key': 'f7tnaio84i4r9n7escd7dp7ke3umumorm4yijfqupqwzkd3m533o',
-  'content-type': 'text/plain;charset=UTF-8',
-  accept: '*/*',
-  'accept-language': '*',
-  'sec-fetch-mode': 'cors',
-  'user-agent': 'node',
-  'accept-encoding': 'gzip, deflate',
-  'content-length': '33'
-} {"message":"Request with header"}
+  host: 'abcdef123456.localhost:8080',
+} {"message":"Hello world!"}
 ```

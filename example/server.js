@@ -1,36 +1,29 @@
 const http = require('http')
-const net = require('net')
 const DHT = require('hyperdht')
 const idEnc = require('hypercore-id-encoding')
 
-const PORT = process.argv[2] || 8081
-const HOST = process.argv[3] || '127.0.0.1'
-const SEED = process.argv[4]
+const SEED = process.argv[2]
 
 // start local http server
-http
-  .createServer((req, res) => {
-    let body = ''
-    req.on('data', (chunk) => {
-      body += chunk
-    })
-    req.on('end', () => {
-      console.log('New request', req.headers, body)
-      res.writeHead(200, { 'Content-Type': 'text/plain' })
-      res.end('ok')
-    })
+const httpServer = http.createServer((req, res) => {
+  let body = ''
+  req.on('data', (d) => {
+    body += d
   })
-  .listen(PORT, () => console.log(`Local http server on ${PORT}`))
+  req.on('end', () => {
+    console.log('New request', req.headers, body)
+    res.end('ok')
+  })
+})
 
 // start public DHT server
 const dht = new DHT()
 const server = dht.createServer((conn) => {
-  const local = net.connect(PORT, HOST)
   conn.on('error', (err) => {
     if (err.code === 'ECONNRESET' || err.message === 'Writable stream closed prematurely') return
     console.warn('DHT error:', err)
   })
-  conn.pipe(local).pipe(conn)
+  httpServer.emit('connection', conn)
 })
 
 const keyPair = DHT.keyPair(SEED && Buffer.alloc(32).fill(SEED))

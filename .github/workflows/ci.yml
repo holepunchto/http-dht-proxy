@@ -13,7 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: holepunchto/actions/.github/steps/setup-repo@v1
-      - run: npm i
-      - run: npm t
+      - uses: holepunchto/actions/bare-base@v1
       - run: npm run lint
+      - run: npm t
+      - run: npm run test-bare
