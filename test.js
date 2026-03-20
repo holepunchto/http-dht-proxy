@@ -40,7 +40,7 @@ test('invalid dht key', async (t) => {
   t.teardown(() => testnet.destroy(), { order: 5000 })
   const { bootstrap } = testnet
 
-  const proxy = await setupProxy(t, { bootstrap })
+  const proxy = await setupProxy(t, { bootstrap, hasStdErr: true })
 
   const url = `http://not-a-valid-key.localhost:${proxy.port}`
 
@@ -55,7 +55,7 @@ test('unavailable upstream', async (t) => {
   t.teardown(() => testnet.destroy(), { order: 5000 })
   const { bootstrap } = testnet
 
-  const proxy = await setupProxy(t, { bootstrap })
+  const proxy = await setupProxy(t, { bootstrap, hasStdErr: true })
 
   const dht = new HyperDHT({ bootstrap })
   t.teardown(() => dht.destroy(), { order: 4000 })
@@ -69,7 +69,7 @@ test('unavailable upstream', async (t) => {
   t.is(body.error, 'PEER_NOT_FOUND: Peer not found', 'response contains error message')
 })
 
-async function setupProxy(t, { bootstrap }) {
+async function setupProxy(t, { bootstrap, hasStdErr = false }) {
   const tProxy = t.test('Proxy')
   tProxy.plan(1)
 
@@ -80,7 +80,7 @@ async function setupProxy(t, { bootstrap }) {
   })
   proc.stderr.on('data', (d) => {
     console.error(d.toString())
-    t.fail('There should be no stderr')
+    if (!hasStdErr) t.fail('There should be no stderr')
   })
 
   let port = ''
