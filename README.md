@@ -35,7 +35,7 @@ Local http server on 8081
 DHT public key abcdef123456
 ```
 
-Send sample request: `node example/client.js <dht-public-key>`, e.g.
+Send sample request: `node example/client.js http://<dht-public-key>.localhost:8080`, e.g.
 
 ```
 node example/client.js abcdef123456

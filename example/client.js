@@ -1,7 +1,6 @@
-const DHT_PUBLIC_KEY = process.argv[2] || ''
-const PROXY = process.argv[3] || 'localhost:8080'
+const URL = process.argv[2] || 'http://dht-key.localhost:8080'
 
-fetch(`http://${DHT_PUBLIC_KEY}.${PROXY}`, {
+fetch(URL, {
   method: 'POST',
   body: JSON.stringify({ message: 'Hello world!' })
 })
