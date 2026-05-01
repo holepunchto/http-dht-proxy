@@ -25,7 +25,7 @@
     "hyperdht": "^6.27.0"
   },
   "devDependencies": {
-    "bare-fetch": "^2.7.3",
+    "bare-fetch": "^3.0.0",
     "bare-http1": "^4.5.2",
     "bare-path": "^3.0.0",
     "bare-subprocess": "^5.2.2",
