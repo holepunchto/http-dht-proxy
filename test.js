@@ -155,13 +155,7 @@ test('bin', async (t) => {
   const tProxy = t.test('Proxy')
   tProxy.plan(1)
 
-  const proc = spawn(process.execPath, [
-    EXECUTABLE,
-    '-p',
-    '0',
-    '--bootstrap',
-    JSON.stringify(bootstrap)
-  ])
+  const proc = spawn(process.execPath, [EXECUTABLE, '--bootstrap', JSON.stringify(bootstrap), '0'])
   t.teardown(() => proc.kill('SIGKILL'), { order: 4000 })
   process.on('exit', () => {
     proc.kill('SIGKILL')

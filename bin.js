@@ -3,27 +3,27 @@
 const goodbye = require('graceful-goodbye')
 const idEnc = require('hypercore-id-encoding')
 const HyperInstrument = require('hyper-instrument')
-const { command, flag } = require('paparam')
+const { command, flag, arg } = require('paparam')
 const pino = require('pino')
 
 const version = require('./package.json').version
 const HttpDhtProxy = require('.')
 
-const DEFAULT_PORT = 8080
 const LOG_LEVELS = ['error', 'warn', 'info', 'debug']
 const DEFAULT_LOG_LEVEL = 'info'
 const SERVICE_NAME = 'http-dht-proxy'
 
 const cmd = command(
   'http-dht-proxy',
-  flag('--port|-p <port>', 'Port to listen on').default(DEFAULT_PORT),
   flag('--log-level|-l <logLevel>', 'Log level').choices(LOG_LEVELS).default(DEFAULT_LOG_LEVEL),
   flag('--scraper-public-key <scraperPublicKey>', 'Public key of a dht-prometheus scraper'),
   flag('--scraper-secret <scraperSecret>', 'Secret of the dht-prometheus scraper'),
   flag('--scraper-alias <scraperAlias>', '(Optional) Alias of scraper service'),
   flag('--bootstrap <bootstrap>', 'Bootstrap nodes').hide(),
-  async ({ flags }) => {
-    const { logLevel, port, scraperPublicKey, scraperSecret, scraperAlias, bootstrap } = flags
+  arg('<port>', 'Port to listen on'),
+  async ({ flags, args }) => {
+    const { logLevel, scraperPublicKey, scraperSecret, scraperAlias, bootstrap } = flags
+    const { port } = args
 
     const logger = pino({ level: logLevel })
 
