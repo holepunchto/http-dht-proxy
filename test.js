@@ -88,7 +88,7 @@ test('metrics', async (t) => {
     const url = `http://${server.dhtPublicKey}.localhost:${proxy.port}`
     const body = JSON.stringify({ message: 'Hello world!' })
     const res = await fetch(url, { method: 'POST', body })
-    const req = await server.req
+    await server.req
 
     const metrics = await promClient.register.metrics()
     t.ok(metrics.includes('http_dht_proxy_connections_total 1'), 'connections metric is registered')
