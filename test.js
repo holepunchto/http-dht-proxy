@@ -21,11 +21,8 @@ test('basic', async (t) => {
   t.teardown(() => testnet.destroy(), { order: 5000 })
   const { bootstrap } = testnet
 
+  const proxy = await setupProxy(t, { bootstrap })
   const server = await setupServer(t, { bootstrap })
-
-  const proxy = new HttpDhtProxy(0, { bootstrap })
-  t.teardown(() => proxy.close(), { order: 3000 })
-  await proxy.ready()
 
   const url = `http://${server.dhtPublicKey}.localhost:${proxy.port}`
   const body = JSON.stringify({ message: 'Hello world!' })
@@ -46,9 +43,7 @@ test('invalid dht key', async (t) => {
   t.teardown(() => testnet.destroy(), { order: 5000 })
   const { bootstrap } = testnet
 
-  const proxy = new HttpDhtProxy(0, { bootstrap })
-  t.teardown(() => proxy.close(), { order: 3000 })
-  await proxy.ready()
+  const proxy = await setupProxy(t, { bootstrap })
 
   const url = `http://not-a-valid-key.localhost:${proxy.port}`
 
@@ -63,9 +58,7 @@ test('unavailable upstream', async (t) => {
   t.teardown(() => testnet.destroy(), { order: 5000 })
   const { bootstrap } = testnet
 
-  const proxy = new HttpDhtProxy(0, { bootstrap })
-  t.teardown(() => proxy.close(), { order: 3000 })
-  await proxy.ready()
+  const proxy = await setupProxy(t, { bootstrap })
 
   const dht = new HyperDHT({ bootstrap })
   t.teardown(() => dht.destroy(), { order: 4000 })
@@ -85,9 +78,7 @@ test('metrics', async (t) => {
   const { bootstrap } = testnet
 
   {
-    const proxy = new HttpDhtProxy(22, { bootstrap })
-    t.teardown(() => proxy.close(), { order: 3000 })
-    await proxy.ready()
+    const proxy = await setupProxy(t, { port: 22, bootstrap })
 
     promClient.register.clear()
     proxy.registerMetrics(promClient)
@@ -101,9 +92,7 @@ test('metrics', async (t) => {
   }
 
   {
-    const proxy = new HttpDhtProxy(0, { bootstrap })
-    t.teardown(() => proxy.close(), { order: 3000 })
-    await proxy.ready()
+    const proxy = await setupProxy(t, { bootstrap })
 
     promClient.register.clear()
     proxy.registerMetrics(promClient)
@@ -119,9 +108,7 @@ test('metrics', async (t) => {
   }
 
   {
-    const proxy = new HttpDhtProxy(0, { bootstrap })
-    t.teardown(() => proxy.close(), { order: 3000 })
-    await proxy.ready()
+    const proxy = await setupProxy(t, { bootstrap })
 
     promClient.register.clear()
     proxy.registerMetrics(promClient)
@@ -192,6 +179,13 @@ test('bin', async (t) => {
   const text = await res.text()
   t.is(text, 'ok', 'correct response')
 })
+
+async function setupProxy(t, { port = 0, bootstrap }) {
+  const proxy = new HttpDhtProxy(port, { bootstrap })
+  t.teardown(() => proxy.close(), { order: 3000 })
+  await proxy.ready()
+  return proxy
+}
 
 async function setupServer(t, { bootstrap }) {
   const reqPromise = rrp()
