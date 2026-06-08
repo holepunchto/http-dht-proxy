@@ -9,6 +9,7 @@ const pino = require('pino')
 const version = require('./package.json').version
 const HttpDhtProxy = require('.')
 
+const DEFAULT_PORT = 8080
 const LOG_LEVELS = ['error', 'warn', 'info', 'debug']
 const DEFAULT_LOG_LEVEL = 'info'
 const SERVICE_NAME = 'http-dht-proxy'
@@ -23,7 +24,7 @@ const cmd = command(
   arg('<port>', 'Port to listen on'),
   async ({ flags, args }) => {
     const { logLevel, scraperPublicKey, scraperSecret, scraperAlias, bootstrap } = flags
-    const { port } = args
+    const { port = DEFAULT_PORT } = args
 
     const logger = pino({ level: logLevel })
 
