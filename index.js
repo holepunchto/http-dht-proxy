@@ -19,6 +19,7 @@ class HttpDhtProxy extends ReadyResource {
     this.server = net.createServer()
 
     this.stats = {
+      connections: 0,
       serverErrors: 0,
       connectionErrorsInvalidHost: 0,
       connectionErrorsDht: 0,
@@ -58,6 +59,7 @@ class HttpDhtProxy extends ReadyResource {
             socket.on('open', resolve)
             socket.on('error', reject)
           })
+          this.stats.connections++
           return socket
         } catch (error) {
           this.stats.connectionErrorsDht++
@@ -103,6 +105,14 @@ class HttpDhtProxy extends ReadyResource {
 
   registerMetrics(promClient) {
     const proxy = this
+
+    new promClient.Gauge({
+      name: 'http_dht_proxy_connections_total',
+      help: 'Number of proxied connections',
+      collect() {
+        this.set(proxy.stats.connections)
+      }
+    })
 
     new promClient.Gauge({
       name: 'http_dht_proxy_server_errors_total',

@@ -78,6 +78,23 @@ test('metrics', async (t) => {
   const { bootstrap } = testnet
 
   {
+    const proxy = await setupProxy(t, { bootstrap })
+    const server = await setupServer(t, { bootstrap })
+
+    promClient.register.clear()
+    proxy.registerMetrics(promClient)
+    t.teardown(() => promClient.register.clear())
+
+    const url = `http://${server.dhtPublicKey}.localhost:${proxy.port}`
+    const body = JSON.stringify({ message: 'Hello world!' })
+    const res = await fetch(url, { method: 'POST', body })
+    const req = await server.req
+
+    const metrics = await promClient.register.metrics()
+    t.ok(metrics.includes('http_dht_proxy_connections_total 1'), 'connections metric is registered')
+  }
+
+  {
     const proxy = await setupProxy(t, { port: 22, bootstrap })
 
     promClient.register.clear()
