@@ -82,14 +82,7 @@ class HttpDhtProxy extends ReadyResource {
   }
 
   async _close() {
-    await new Promise((resolve) => {
-      this.server.close((error) => {
-        if (error) {
-          this.emit('server-error-close', { error })
-        }
-        resolve()
-      })
-    })
+    this.server.close()
     await this.dht.destroy()
   }
 

@@ -43,9 +43,6 @@ const cmd = command(
         `Connection error - DHT connection failed for host ${host} with public key ${dhtPublicKey}: ${error}`
       )
     })
-    proxy.on('server-error-close', ({ error }) => {
-      logger.warn(`Server close error: ${error}`)
-    })
     proxy.on('listening', ({ port }) => {
       logger.info(`HTTP-to-DHT proxy on ${port}`)
     })
