@@ -1,6 +1,7 @@
 const { isBare } = require('which-runtime')
 const test = require('brittle')
 const fetch = isBare ? require('bare-fetch') : global.fetch
+const promClient = require('bare-prom-client')
 const { spawn } = require('child_process')
 const http = require('http')
 const idEnc = require('hypercore-id-encoding')
@@ -10,6 +11,8 @@ const NewlineDecoder = require('newline-decoder')
 const path = require('path')
 const process = require('process')
 const rrp = require('resolve-reject-promise')
+
+const HttpDhtProxy = require('.')
 
 const EXECUTABLE = path.join(__dirname, isBare ? 'bin-bare.js' : 'bin.js')
 
@@ -69,11 +72,76 @@ test('unavailable upstream', async (t) => {
   t.is(body.error, 'PEER_NOT_FOUND: Peer not found', 'response contains error message')
 })
 
-async function setupProxy(t, { bootstrap }) {
+test('metrics', async (t) => {
+  const testnet = await createTestnet()
+  t.teardown(() => testnet.destroy(), { order: 5000 })
+  const { bootstrap } = testnet
+
+  {
+    const proxy = await setupProxy(t, { bootstrap })
+    const server = await setupServer(t, { bootstrap })
+
+    promClient.register.clear()
+    proxy.registerMetrics(promClient)
+    t.teardown(() => promClient.register.clear())
+
+    const url = `http://${server.dhtPublicKey}.localhost:${proxy.port}`
+    const body = JSON.stringify({ message: 'Hello world!' })
+    const res = await fetch(url, { method: 'POST', body })
+    await server.req
+
+    const metrics = await promClient.register.metrics()
+    t.ok(metrics.includes('http_dht_proxy_connections_total 1'), 'connections metric is registered')
+  }
+
+  {
+    const proxy = await setupProxy(t, { bootstrap })
+
+    promClient.register.clear()
+    proxy.registerMetrics(promClient)
+    t.teardown(() => promClient.register.clear())
+
+    await fetch(`http://not-a-valid-key.localhost:${proxy.port}`)
+
+    const metrics = await promClient.register.metrics()
+    t.ok(
+      metrics.includes('http_dht_proxy_connection_errors_invalid_host_total 1'),
+      'connection errors for invalid host metric is registered'
+    )
+  }
+
+  {
+    const proxy = await setupProxy(t, { bootstrap })
+
+    promClient.register.clear()
+    proxy.registerMetrics(promClient)
+    t.teardown(() => promClient.register.clear())
+
+    const dht = new HyperDHT({ bootstrap })
+    t.teardown(() => dht.destroy(), { order: 4000 })
+    const unreachableKey = idEnc.normalize(dht.defaultKeyPair.publicKey)
+    const url = `http://${unreachableKey}.localhost:${proxy.port}`
+    await fetch(url, { method: 'GET' })
+
+    const metrics = await promClient.register.metrics()
+    t.ok(
+      metrics.includes('http_dht_proxy_connection_errors_dht_total 1'),
+      'connection errors for DHT issues metric is registered'
+    )
+  }
+})
+
+test('bin', async (t) => {
+  const testnet = await createTestnet()
+  t.teardown(() => testnet.destroy(), { order: 5000 })
+  const { bootstrap } = testnet
+
+  const server = await setupServer(t, { bootstrap })
+
   const tProxy = t.test('Proxy')
   tProxy.plan(1)
 
-  const proc = spawn(process.execPath, [EXECUTABLE, '0', JSON.stringify(bootstrap)])
+  const proc = spawn(process.execPath, [EXECUTABLE, '--bootstrap', JSON.stringify(bootstrap), '0'])
   t.teardown(() => proc.kill('SIGKILL'), { order: 4000 })
   process.on('exit', () => {
     proc.kill('SIGKILL')
@@ -89,13 +157,31 @@ async function setupProxy(t, { bootstrap }) {
     for (const line of stdoutDec.push(d)) {
       if (line.includes('HTTP-to-DHT proxy on')) {
         tProxy.pass('Proxy started')
-        port = line.split('HTTP-to-DHT proxy on ')[1]
+        port = line.split('HTTP-to-DHT proxy on ')[1].split('"')[0]
       }
     }
   })
   await tProxy
 
-  return { port }
+  const url = `http://${server.dhtPublicKey}.localhost:${port}`
+  const body = JSON.stringify({ message: 'Hello world!' })
+  const res = await fetch(url, { method: 'POST', body })
+
+  const req = await server.req
+  t.is(req.method, 'POST', 'correct method')
+  t.is(req.pathname, '/', 'correct pathname')
+  t.is(req.headers.host, `${server.dhtPublicKey}.localhost:${port}`, 'correct host header')
+  t.is(req.body, body, 'correct body')
+
+  const text = await res.text()
+  t.is(text, 'ok', 'correct response')
+})
+
+async function setupProxy(t, { port = 0, bootstrap }) {
+  const proxy = new HttpDhtProxy(port, { bootstrap })
+  t.teardown(() => proxy.close(), { order: 3000 })
+  await proxy.ready()
+  return proxy
 }
 
 async function setupServer(t, { bootstrap }) {
