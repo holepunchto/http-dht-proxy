@@ -21,7 +21,7 @@ const cmd = command(
   flag('--scraper-secret <scraperSecret>', 'Secret of the dht-prometheus scraper'),
   flag('--scraper-alias <scraperAlias>', '(Optional) Alias of scraper service'),
   flag('--bootstrap <bootstrap>', 'Bootstrap nodes').hide(),
-  arg('[port]', 'Port to listen on'),
+  arg('[port]', `Port to listen on (default: ${DEFAULT_PORT})`),
   async ({ flags, args }) => {
     const { logLevel, scraperPublicKey, scraperSecret, scraperAlias } = flags
     const bootstrap = flags.bootstrap ? JSON.parse(flags.bootstrap) : undefined
