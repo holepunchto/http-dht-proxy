@@ -80,6 +80,7 @@ class HttpDhtProxy extends ReadyResource {
   }
 
   async _close() {
+    // TODO: handle error on close, e.g. closedProm = once(this.server, 'close')
     this.server.close()
     await this.dht.destroy()
   }
