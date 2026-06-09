@@ -95,20 +95,6 @@ test('metrics', async (t) => {
   }
 
   {
-    const proxy = await setupProxy(t, { port: 22, bootstrap })
-
-    promClient.register.clear()
-    proxy.registerMetrics(promClient)
-    t.teardown(() => promClient.register.clear())
-
-    const metrics = await promClient.register.metrics()
-    t.ok(
-      metrics.includes('http_dht_proxy_server_errors_total 1'),
-      'server errors metric is registered'
-    )
-  }
-
-  {
     const proxy = await setupProxy(t, { bootstrap })
 
     promClient.register.clear()

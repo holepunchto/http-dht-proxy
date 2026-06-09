@@ -20,19 +20,12 @@ class HttpDhtProxy extends ReadyResource {
 
     this.stats = {
       connections: 0,
-      serverErrors: 0,
       connectionErrorsInvalidHost: 0,
-      connectionErrorsDht: 0,
-      serverCloseErrors: 0
+      connectionErrorsDht: 0
     }
   }
 
   async _open() {
-    this.server.on('error', (error) => {
-      this.stats.serverErrors++
-      this.emit('server-error', { error })
-    })
-
     this.server.on('connection', (sock) => {
       proxy(sock, async (host) => {
         let dhtPublicKey
@@ -78,10 +71,8 @@ class HttpDhtProxy extends ReadyResource {
       })
     })
 
-    await new Promise((resolve) => {
-      this.server.once('error', (error) => {
-        resolve()
-      })
+    await new Promise((resolve, reject) => {
+      this.server.once('error', reject)
       this.server.listen(this.port, () => {
         this.emit('listening', { port: this.server.address().port })
         this.port = this.server.address().port
@@ -94,7 +85,6 @@ class HttpDhtProxy extends ReadyResource {
     await new Promise((resolve) => {
       this.server.close((error) => {
         if (error) {
-          this.stats.serverCloseErrors++
           this.emit('server-error-close', { error })
         }
         resolve()
@@ -115,14 +105,6 @@ class HttpDhtProxy extends ReadyResource {
     })
 
     new promClient.Gauge({
-      name: 'http_dht_proxy_server_errors_total',
-      help: 'Number of server errors',
-      collect() {
-        this.set(proxy.stats.serverErrors)
-      }
-    })
-
-    new promClient.Gauge({
       name: 'http_dht_proxy_connection_errors_invalid_host_total',
       help: 'Number of connection errors due to invalid host',
       collect() {
@@ -135,14 +117,6 @@ class HttpDhtProxy extends ReadyResource {
       help: 'Number of connection errors due to DHT issues',
       collect() {
         this.set(proxy.stats.connectionErrorsDht)
-      }
-    })
-
-    new promClient.Gauge({
-      name: 'http_dht_proxy_server_close_errors_total',
-      help: 'Number of server close errors',
-      collect() {
-        this.set(proxy.stats.serverCloseErrors)
       }
     })
   }

@@ -35,9 +35,6 @@ const cmd = command(
       logger.info('HTTP-to-DHT proxy stopped')
     })
 
-    proxy.on('server-error', ({ error }) => {
-      logger.error(`Server error ${error}`)
-    })
     proxy.on('connection-error-invalid-host', ({ host, error }) => {
       logger.warn(`Connection error - invalid host ${host}: ${error}`)
     })
