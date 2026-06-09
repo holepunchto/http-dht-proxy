@@ -23,14 +23,13 @@ const cmd = command(
   flag('--bootstrap <bootstrap>', 'Bootstrap nodes').hide(),
   arg('[port]', 'Port to listen on'),
   async ({ flags, args }) => {
-    const { logLevel, scraperPublicKey, scraperSecret, scraperAlias, bootstrap } = flags
-    const { port = DEFAULT_PORT } = args
+    const { logLevel, scraperPublicKey, scraperSecret, scraperAlias } = flags
+    const bootstrap = flags.bootstrap ? JSON.stringify(flags.bootstrap) : undefined
+    const port = args.port ? +args.port : DEFAULT_PORT
 
     const logger = pino({ level: logLevel })
 
-    const proxy = new HttpDhtProxy(+port, {
-      ...(bootstrap && { bootstrap: JSON.parse(bootstrap) })
-    })
+    const proxy = new HttpDhtProxy(port, { bootstrap })
     goodbye(async () => {
       await proxy.close()
       logger.info('HTTP-to-DHT proxy stopped')
