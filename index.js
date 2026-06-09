@@ -13,7 +13,7 @@ class HttpDhtProxy extends ReadyResource {
     this.port = port
 
     this.dht = new HyperDHT({
-      ...(opts.bootstrap && { bootstrap: opts.bootstrap })
+      bootstrap: opts.bootstrap,
     })
 
     this.server = net.createServer()
