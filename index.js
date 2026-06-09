@@ -79,7 +79,7 @@ class HttpDhtProxy extends ReadyResource {
     })
 
     await new Promise((resolve) => {
-      this.server.on('error', (error) => {
+      this.server.once('error', (error) => {
         resolve()
       })
       this.server.listen(this.port, () => {
