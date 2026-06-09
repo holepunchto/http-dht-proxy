@@ -24,7 +24,7 @@ const cmd = command(
   arg('[port]', 'Port to listen on'),
   async ({ flags, args }) => {
     const { logLevel, scraperPublicKey, scraperSecret, scraperAlias } = flags
-    const bootstrap = flags.bootstrap ? JSON.stringify(flags.bootstrap) : undefined
+    const bootstrap = flags.bootstrap ? JSON.parse(flags.bootstrap) : undefined
     const port = args.port ? +args.port : DEFAULT_PORT
 
     const logger = pino({ level: logLevel })
