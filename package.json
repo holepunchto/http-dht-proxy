@@ -1,6 +1,6 @@
 {
   "name": "http-dht-proxy",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Relay http request to dht peer",
   "main": "index.js",
   "bin": {
