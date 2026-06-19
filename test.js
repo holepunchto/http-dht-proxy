@@ -1,6 +1,6 @@
 const { isBare } = require('which-runtime')
 const test = require('brittle')
-const fetch = isBare ? require('bare-fetch') : global.fetch
+const fetch = require('#fetch')
 const promClient = require('bare-prom-client')
 const { spawn } = require('child_process')
 const http = require('http')
