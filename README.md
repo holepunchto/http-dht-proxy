@@ -22,6 +22,17 @@ http-dht-proxy 8080
 
 ## Example
 
+### File server
+Run `node example/file-server.js <seed> <folder>`
+
+```
+Served at https://<dht-key>.hyperproxy.org/
+```
+
+Go to `https://<dht-key>.hyperproxy.org/<file-path>` to download file
+
+### Base server
+
 Start proxy server: `node bin.js`
 
 ```
@@ -48,3 +59,4 @@ New request {
   host: 'abcdef123456.localhost:8080',
 } {"message":"Hello world!"}
 ```
+
