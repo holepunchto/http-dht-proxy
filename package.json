@@ -43,6 +43,10 @@
     "which-runtime": "^1.3.2"
   },
   "imports": {
+    "#fetch": {
+      "bare": "./lib/fetch/bare.js",
+      "node": "./lib/fetch/node.js"
+    },
     "child_process": {
       "bare": "bare-subprocess",
       "default": "child_process"
