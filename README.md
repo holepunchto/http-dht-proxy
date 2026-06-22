@@ -23,6 +23,7 @@ http-dht-proxy 8080
 ## Example
 
 ### File server
+
 Run `node example/file-server.js <seed> <folder>`
 
 ```
@@ -59,4 +60,3 @@ New request {
   host: 'abcdef123456.localhost:8080',
 } {"message":"Hello world!"}
 ```
-
