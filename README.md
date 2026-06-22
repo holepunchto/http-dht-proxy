@@ -22,6 +22,18 @@ http-dht-proxy 8080
 
 ## Example
 
+### Basic auth server
+
+Run `node example/basic-auth.js`
+
+```
+Served at https://<dht-key>.hyperproxy.org
+```
+
+Go to `https://<dht-key>.hyperproxy.org`, fill the auth form with user `alice` and pass `secret`
+
+### Base server
+
 Start proxy server: `node bin.js`
 
 ```
